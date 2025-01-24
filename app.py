@@ -973,7 +973,7 @@ def add_to_cart(pet_id):
         print(f"Error adding to customer cart: {e}")
         return "Error adding item to cart", 500
     
-@app.route('/delete_from_cart/<int:cart_item_id>', methods=['POST'])
+@app.route('/delete_from_cart/<int:cart_item_id>', methods=['GET'])
 def delete_from_cart(cart_item_id):
     cart_item = db.session.query(Cart).filter_by(id=cart_item_id).first()
     if cart_item:
