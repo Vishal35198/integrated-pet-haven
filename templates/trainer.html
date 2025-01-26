@@ -553,6 +553,43 @@
       object-fit: cover;
       margin-bottom: 1rem;
     }
+    #notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            display: none; /* Initially hidden */
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s, fadeOut 0.5s 4.5s; /* Animation */
+        }
+
+        .notification-success {
+            background: linear-gradient(90deg, #4caf50, #81c784);
+        }
+
+        .notification-error {
+            background: linear-gradient(90deg, #f44336, #e57373);
+        }
+
+        /* Keyframes for fade in and fade out */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        .notification-icon {
+            margin-right: 10px;
+            vertical-align: middle;
+        }
   </style>
 </head>
 

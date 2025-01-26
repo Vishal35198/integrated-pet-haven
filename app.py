@@ -13,7 +13,7 @@ import os
 from bcrypt import checkpw
 from flask import Flask, render_template, request, redirect, flash, url_for, session, send_from_directory
 import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content
+# from sendgrid.helpers.mail import Mail, Email, To, Content
 from datetime import date
 from PIL import Image
 from werkzeug.security import generate_password_hash
@@ -37,6 +37,7 @@ app.config['MAIL_USERNAME'] = 'jasnavig9@gmail.com'
 app.config['MAIL_PASSWORD'] = 'guze fwag qsff hppm'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@gmail.com'
 notif_mail = Mail(app)
+
 
 # Database Model
 class User(db.Model):
@@ -585,6 +586,7 @@ def send_otp():
         msg = Message('Your PetCare OTP', sender=app.config['MAIL_USERNAME'], recipients=[email])
         msg.body = f"Your OTP for registration is: {otp}"
         notif_mail.send(msg)
+        
         return jsonify({'status': 'success', 'message': 'OTP sent to your email.'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Failed to send OTP: {str(e)}'}), 500
@@ -906,7 +908,8 @@ def get_cart_data():
 # Customer Cart Routes
 @app.route('/cart', methods=['GET'])
 def view_cart():
-    cart_data = get_cart_data()
+    # ! This is Team 2 Cart Data 
+    cart_data_2 = get_cart_data()
     # cart_items = Cart.query.all()
     # cart_items = Final_Cart.query.all()
     # trainers = []
@@ -915,8 +918,9 @@ def view_cart():
     #     trainer = Service_Provider.query.get(item.service_provider_id)
     #     if trainer:
     #         trainers.append(trainer)
+    #! This is Team 3 Cart Data
     cart_items = Final_Cart.query.all()
-    cart_info = []
+    cart_data_3 = []
     for item in cart_items:
         trainer = Service_Provider.query.get(item.service_provider_id)
         if trainer:
@@ -928,20 +932,26 @@ def view_cart():
                 "booking_date": item.booking_date,
                 'cost': trainer.cost
             }
-            cart_info.append(d)
-    cost = cart_data['subtotal']
-    for i in range(len(cart_info)):
-        cost += cart_info[i]['cost']
+            cart_data_3.append(d)
+    print(cart_data_3)
+    #! This is Team 4 Cart Data 
+    # cart_data_4 = Registration.query.all()
+    # cart_data_4_Total = sum(item.event.price if item.event else 0 for item in cart_data_4)
+
+    cost = cart_data_2['subtotal']
+    # cost+=cart_data_4_Total
+    for i in range(len(cart_data_3)):
+        cost += cart_data_3[i]['cost']
     return render_template(
         'cart.html',
-        cart_items=cart_data['cart_details'],
+        cart_data_2=cart_data_2['cart_details'],
         subtotal=cost,
-        shipping=cart_data['shipping'],
+        shipping=cart_data_2['shipping'],
         # gst=cart_data['gst'],
         # sgst=cart_data['sgst'],
         # total=cost,
         # role='customer',
-        cart_info = cart_info
+        cart_data_3 = cart_data_3
     )
 
 
@@ -1940,6 +1950,9 @@ def services():
 
 @app.route('/trainer')
 def trainer():
+    # if 'user' not in session:
+    #     flash('Please login first!', 'danger')
+    #     return redirect(url_for('login'))
     services = Service.query.all()
     trainers = Service_Provider.query.all()
     # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
@@ -2072,6 +2085,7 @@ def delete_cart(id):
         # if booking:
         #     db.session.delete(booking)
         db.session.commit()
+        flash("Item removed from cart successfully!", "success")
     return redirect('/cart')
 
 @app.route('/api/book_slot', methods=['POST'])

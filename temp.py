@@ -24,3 +24,5 @@ with app.app_context():
     db.session.commit()
 
     print("Fake data added successfully!")
+
+#  Run the script to add fake data 
