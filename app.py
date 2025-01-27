@@ -19,6 +19,7 @@ from PIL import Image
 from werkzeug.security import generate_password_hash
 
 
+
 app = Flask(__name__)
 app.secret_key = 'pethaven'
 
@@ -91,6 +92,13 @@ class Sale(db.Model):
     payment_method = db.Column(db.String, nullable=False, default="Cash On Delivery")
     invoice_number = db.Column(db.String(50), unique=True, nullable=False)
 
+    def __init__(self, buyer_name, sale_price, payment_method, invoice_number):
+        self.buyer_name = buyer_name
+        self.sale_price = sale_price
+        self.payment_method = payment_method
+        self.invoice_number = invoice_number
+        self.sale_date = datetime.now()
+
 class Sale_detail(db.Model):
     __tablename__= 'sale_detail'
 
@@ -99,6 +107,12 @@ class Sale_detail(db.Model):
     breed_name = db.Column(db.String(50), nullable=False) 
     price =	db.Column(db.Numeric, nullable=False)
     dog_id = db.Column(db.Integer, nullable=False)	
+
+    def __init__(self, sale_id, breed_name, price, dog_id):
+        self.sale_id = sale_id
+        self.breed_name = breed_name
+        self.price = price
+        self.dog_id = dog_id
 
 class Dog_sales(db.Model):
     __tablename__= 'Dog_sales'
@@ -937,21 +951,37 @@ def view_cart():
     #! This is Team 4 Cart Data 
     # cart_data_4 = Registration.query.all()
     # cart_data_4_Total = sum(item.event.price if item.event else 0 for item in cart_data_4)
-
+    cart_data_4 = CartEvent.query.all() 
+    cart_data_4_info = []
+    for item in cart_data_4:
+        event = Registration.query.get(item.registration_id)
+        if event:
+            d = {
+                'id': item.cart_id,
+                'name': event.competition_name,
+                'registration_id': item.registration_id,
+                'cost': item.price
+            }
+            cart_data_4_info.append(d)
     cost = cart_data_2['subtotal']
-    # cost+=cart_data_4_Total
+    cost+= sum(item['cost'] for item in cart_data_4_info)
     for i in range(len(cart_data_3)):
         cost += cart_data_3[i]['cost']
+
+    gst = cost * 0.05
+    sgst = gst // 2
+
+    total = cost + gst + sgst
     return render_template(
         'cart.html',
         cart_data_2=cart_data_2['cart_details'],
         subtotal=cost,
-        shipping=cart_data_2['shipping'],
-        # gst=cart_data['gst'],
-        # sgst=cart_data['sgst'],
-        # total=cost,
-        # role='customer',
-        cart_data_3 = cart_data_3
+        shipping=500,
+        gst=gst,
+        sgst=sgst,
+        cart_data_3 = cart_data_3,
+        cart_data_4 = cart_data_4_info,
+        total = total
     )
 
 
@@ -2325,11 +2355,13 @@ def initiate_cart_checkout():
 @app.route('/success')
 def success():
     try:
+        # ! Add Cart items 2 to sales 
+        # ! Add Cart item 3 to Booking 
         # Get order details from session
         order_details = session.get('order_details', {})
         if not order_details:
             print("No order details found in session")
-            return redirect(url_for('index'))
+            return redirect(url_for('home'))
 
         shipping_details = order_details.get('shipping_details', {})
         cart_summary = order_details.get('cart_summary', {})
@@ -2444,7 +2476,109 @@ PetCare Team"""
     except Exception as e:
         print(f"Error in success page: {str(e)}")
         return redirect(url_for('index'))
+
+
+@app.route('/success_page')
+def success_page():
+    shipping_data = session.get('shipping_data', {})
+    payment_option = session.get('payment_option')
+    current_date = datetime.today().strftime('%Y-%m-%d')
+    expected_delivery_date = (datetime.today() + timedelta(days=5)).strftime('%Y-%m-%d')
+
+    sale = Sale(
+        buyer_name=f"{shipping_data.get('first_name')} {shipping_data.get('last_name')}",
+        sale_price=get_cart_data()['total'],
+        payment_method=payment_option,
+        invoice_number = str(datetime.now().timestamp()).replace('.', '')
+    )
+
+    db.session.add(sale)
+    db.session.commit()
+
+    for cart_detail in get_cart_data()['cart_details']:
+        sale_detail = Sale_detail(
+            sale_id = sale.sale_id,
+            breed_name=cart_detail['name'],
+            price=cart_detail['price'],
+            dog_id=cart_detail['pet_id']
+        )
+        db.session.add(sale_detail)
+
+    cart_items = Final_Cart.query.all()
+    for item in cart_items:
+        booking = Booking(
+            name=shipping_data['first_name'] + ' ' + shipping_data['last_name'],
+            email=shipping_data['email'],
+            phone=shipping_data['contact'],
+            service_id=Service_Provider.query.get(item.service_provider_id).service_provided_id,
+            provider_id=item.service_provider_id,
+            booking_date=item.booking_date,
+            booking_time=item.booking_time
+        )
+        db.session.add(booking)
+        db.session.commit()
+    # item , price , quantity total
+    summary = []
+    for cart_detail in get_cart_data()['cart_details']:
+        summary.append({
+            'item': cart_detail['name'],
+            'price': cart_detail['price'],
+            'quantity': 1,
+            'total': cart_detail['price']
+        })
+    # item , price , quantity total
+    for items in cart_items:
+        summary.append({
+            'item': Service_Provider.query.get(items.service_provider_id).name,
+            'price': Service_Provider.query.get(items.service_provider_id).cost,
+            'quantity': 1,
+            'total': Service_Provider.query.get(items.service_provider_id).cost
+        })
+
+    cart_items = CartEvent.query.all()
+    for item in cart_items:
+        summary.append({
+            'item':Registration.query.get(item.registration_id).competition_name,
+            'price': item.price,
+            "quantity": 1,
+            "total": item.price,
+        })
+
+
+    subtotal = 0 
+    for item in summary:
+        subtotal += item['price']
     
+    shipping = 100
+    gst = subtotal * 0.18
+    sgst = gst / 2
+    total = subtotal + shipping + gst
+
+    db.session.query(Final_Cart).delete()
+    db.session.query(Cart).delete()
+    db.session.query(CartEvent).delete()
+    db.session.commit()
+
+    return render_template(
+        'success.html', 
+        first_name = shipping_data['first_name'],
+        email = shipping_data['email'],
+        contact = shipping_data['contact'],
+        address = shipping_data['address'],
+        zip_code = shipping_data['zip_code'],
+        state = shipping_data['state'],
+        payment_option=payment_option, current_date=current_date, expected_delivery_date=expected_delivery_date,
+        summary=summary,
+        subtotal=subtotal,
+        shipping=shipping,
+        gst=gst,
+        sgst=sgst,
+        total=total
+    )
+
+
+
+
 def setup_image_handling(app):
     # Configure image upload settings
     UPLOAD_FOLDER = os.path.join('static', 'images')

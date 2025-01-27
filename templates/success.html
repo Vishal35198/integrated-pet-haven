@@ -42,9 +42,9 @@
                 </tr>
             </thead>
             <tbody>
-                {% for item in cart_details %}
+                {% for item in summary %}
                 <tr>
-                    <td>{{ item.name }}</td>
+                    <td>{{ item.item }}</td>
                     <td>{{ item.price }} Rs</td>
                     <td>{{ item.quantity }}</td>
                     <td>{{ item.total }} Rs</td>
@@ -68,7 +68,7 @@
             {% if role == 'admin' %}
                 <a href="{{ url_for('admin') }}" class="btn btn-primary btn-custom">Back to Home</a>
             {% else %}
-                <a href="{{ url_for('cannine_home') }}" class="btn btn-primary btn-custom">Back to Home</a>
+                <a href="{{ url_for('home') }}" class="btn btn-primary btn-custom">Back to Home</a>
             {% endif %}
             <button class="btn btn-success btn-custom" onclick="window.print();">Print Bill</button>
         </div>

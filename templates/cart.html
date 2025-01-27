@@ -116,7 +116,7 @@
 
     <!-- Main Content -->
     <div class="container" style="margin-top : 80px;">
-        {% if not (cart_data_2 or cart_data_3) %}
+        {% if not (cart_data_2 or cart_data_3 or cart_data_4) %}
         <div class="empty-cart-message">
             <h3>Your cart is empty.</h3>
             <p>Please add some items to your cart.</p>
@@ -139,17 +139,34 @@
             {% endfor %}
             {% for item in cart_data_3 %}
             <div class="cart-items">
-                <img src="" alt=""
-                    height="10%" width="10%">
     
     
                 <div class="cart-item">
                     <!-- <h1>{{item.service_provider_id}}</h1> -->
                     <img src="{{ url_for('static', filename='images/trainers/trainer'~item.service_provider_id~'.jpg') }}" alt="{{ item.name }}">
-                    <div class="item-name">{{ item.name }}</div>
-                    <div class="item-price">Cost : {{ item.cost }} Rs</div>
+                    <h3>{{ item.name }}</h3>
+                    <p class = "price">{{ item.cost }} Rs</p>
                     <div class="booking-time">Booking time :{{ item.booking_time}}</div>
                     <div class="booking-date">Booking Date: {{ item.booking_date}}</div>
+                        <a href="/delete_to_cart/{{item.id}}"><button type="submit" class="delete-button">Delete</button></a>
+                </div>
+                <!-- <div class="item-actions">
+    
+                    <a href="/delete_to_cart/{{item.id}}"><button class="remove-button">Remove</button></a>
+                    <a href="/booking?provider_id={{item.service_provider_id}}&service_id={{item.service_provided_id}}"><button
+                            class="remove-button">Show
+                            item</button></a>
+                </div> -->
+            </div>
+            {% endfor %}
+            {% for item in cart_data_4 %}
+            <div class="cart-items">
+    
+                <div class="cart-item">
+                    <!-- <h1>{{item.service_provider_id}}</h1> -->
+                    <img src="{{ url_for('static', filename='images/competions/agility.jpeg') }}" alt="{{ item.name }}">
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="price">{{ item.cost }} Rs</div>
                         <a href="/delete_to_cart/{{item.id}}"><button type="submit" class="delete-button">Delete</button></a>
                 </div>
                 <!-- <div class="item-actions">
