@@ -293,6 +293,53 @@
     background-color: #dc3545;
     color: white;
 }
+.competitions {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .competition-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .category-card {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .category-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .category-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 16px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        .card-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-content h3 {
+            margin-bottom: 10px;
+            color: rgb(3, 31, 61);
+        }
+
+        .card-content p {
+            color: #555;
+            margin-bottom: 15px;
+        }
+
 
     </style>
 </head>
@@ -328,38 +375,43 @@
 {% endwith %}
 </div>
 
-    <div class="main-content" id="main-content">
-        <section class="competitions">
-            <h2>Competition Categories</h2>
-            
-            <div class="competition-container">
-                {% for event in events %}
-                <div class="row">
-                    <div class="category-card">
-                        <img src="{{ url_for('uploaded_file', filename=event.image.split('uploads/')[1]) }}" alt="{{ event.name }}" width="300">
-                        <div class="card-content">
-                            <h3>{{ event.name }}</h3>
-                            <p>{{ event.description }}</p>
-                            {% if event.is_active %}
-                                <span style="display: inline-block; padding: 5px 10px; background-color: #28a745; color: white; border-radius: 5px; font-size: 0.9rem; margin-bottom: 10px;">Active</span>
-                            {% else %}
-                                <span style="display: inline-block; padding: 5px 10px; background-color: #dc3545; color: white; border-radius: 5px; font-size: 0.9rem; margin-bottom: 10px;">Inactive</span>
-                            {% endif %}
-                            <form action="/register?event_id={{ event.id }}" method="GET" style="display: inline;">
-                                <button class="action-btn join-btn" {% if not event.is_active %} disabled {% endif %}>Join</button>
-                            </form>
-                        </div>
+<div class="main-content" id="main-content">
+    <section class="competitions">
+        <h2>Competition Categories</h2>
+        
+        <div class="competition-container">
+            {% for event in events %}
+            <div class="row">
+                <div class="category-card">
+                    <img src="{{ url_for('uploaded_file', filename=event.image.split('uploads/')[1]) }}" alt="{{ event.name }}" width="300">
+                    <div class="card-content">
+                        <h3>{{ event.name }}</h3>
+                        <p>{{ event.description }}</p>
+                        <p style="margin-top: 10px; font-size: 0.9rem; color: #555;">
+                            <strong>Event Date:</strong> {{ event.date.strftime('%B %d, %Y') }}
+                        </p>
+                        {% if event.is_active %}
+                            <span style="display: inline-block; padding: 5px 10px; background-color: #28a745; color: white; border-radius: 5px; font-size: 0.9rem; margin-bottom: 10px;">Active</span>
+                        {% else %}
+                            <span style="display: inline-block; padding: 5px 10px; background-color: #dc3545; color: white; border-radius: 5px; font-size: 0.9rem; margin-bottom: 10px;">Inactive</span>
+                        {% endif %}
+                        <form action="/register_competition?event_id={{ event.id }}" method="GET" style="display: inline;">
+                            <button class="action-btn join-btn" 
+                                    {% if not event.is_active %} 
+                                        onclick="showInactiveAlert()" 
+                                        type="button" 
+                                    {% endif %}>
+                                Join
+                            </button>
+                        </form>
                     </div>
-                    
-                    
                 </div>
-                {% endfor %}
             </div>
-            
-                
-            </div>
-        </section>
-    </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
 
     <footer>
         <p>&copy; 2024 Dog Competition Events. All rights reserved.</p>
@@ -390,5 +442,12 @@
             });
         }, 3000); // 3000 milliseconds = 3 seconds
     </script>
+    <script>
+        // Function to show an alert message for inactive events
+        function showInactiveAlert() {
+            alert("This event is currently inactive and registration is not allowed as the event date has expired.");
+        }
+    </script>
+    
 </body>
 </html>

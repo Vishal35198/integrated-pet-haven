@@ -182,15 +182,14 @@ class Payment(db.Model):
 
 class CartEvent(db.Model):
     __tablename__ = 'cart_event'
-    cart_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    registration_id = db.Column(db.String(10), db.ForeignKey('registration.id'), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    quantity = db.Column(db.Integer, nullable=False, default=1)
+    id = db.Column(db.Integer, primary_key=True)
+    registration_id = db.Column(db.String, db.ForeignKey('registration.id'), nullable=False)
+    event_price = db.Column(db.Float, db.ForeignKey('event.price'), nullable=False)
+    
+    registration = db.relationship('Registration', backref='cart_items')
+    event = db.relationship('Event', backref='cart_items')
 
-    # Relationships
-    customer = db.relationship('Customer', backref=db.backref('cart_items', lazy=True))
-    registration = db.relationship('Registration', backref=db.backref('cart_items', lazy=True))
+
 # ! """---------------------------------------------------------------------------------------------------------"""
 #! TEAM 3 CODE STARTS HERE
 class Service(db.Model):
@@ -1469,17 +1468,25 @@ def register_competition():
     return render_template('registration.html', events=events)
 
 
+
+
 @app.route('/my-events')
 def my_events():
     today = date.today()
     events = Event.query.all()
     registrations = Registration.query.all()
-    carts=Cart.query.all()
+    carts = Cart.query.all()
+
+    # Safely check if registration.event exists
     for registration in registrations:
-        event_date = registration.event.date
-        registration.event.is_active = event_date >= today
-    
-    return render_template('my_events.html', registrations=registrations, events=events,carts=carts)
+        if registration.event:  # Ensure the event exists
+            event_date = registration.event.date
+            registration.event.is_active = event_date >= today
+        else:
+            registration.event = None  # Handle missing event reference
+
+    return render_template('my_events.html', registrations=registrations, events=events, carts=carts)
+
 
 @app.route('/edit/<string:id>', methods=['GET', 'POST'])
 def edit_registration(id):
@@ -1612,7 +1619,7 @@ def send_event_registration_email(customer_name, customer_email, event_name, eve
             recipients=[customer_email],
             body=email_body
         )
-        notif_mail.send(msg)
+        mail.send(msg)
         print(f"Email sent to {customer_name} ({customer_email})")
     except Exception as e:
         print(f"Error sending email to {customer_name}: {e}")
@@ -1690,65 +1697,80 @@ def delete_event(event_id):
 
 @app.route('/cart_event')
 def cart_event():
-    # Fetch registrations from the Registration table
-    cart_items = Registration.query.all()
+    registrations = Registration.query.all()
+    cart_entries = CartEvent.query.all()
+    events=Event.query.all()
 
-    # Calculate total price
-    total_price = sum(item.event.price if item.event else 0 for item in cart_items)
+    total_price = sum(entry.event_price for entry in cart_entries)
+    
+    return render_template('cart_event.html', cart_entries=cart_entries, total_price=total_price,registrations=registrations,events=events)
 
-    # Render the cart page with the fetched items and total price
-    return render_template(
-        'cart_event.html',
-        registrations=cart_items,
-        total_price=total_price
-    )
+    
 @app.route('/add_item_to_cart', methods=['POST'])
 def add_item_to_cart():
-    # Get the registration ID from the form
-    registration_id = request.form.get('registration_id')
+
+    # Retrieve selected registration IDs
+    id_list = request.form.getlist('registration_ids')  # ['1', '2', '3']
+    print(request.form)
+    print(id_list)
     
-    # Check for missing registration ID
-    if not registration_id:
-        flash("Invalid registration ID.", "danger")
-        return redirect(url_for('home'))
+    # Initialize counters and flags
+    added_count = 0
+    invalid_payments = []
 
-    # Fetch the registration details from the database
-    registration = Registration.query.get(registration_id)
-    
-    # If the registration doesn't exist, flash an error
-    if not registration:
-        flash("Registration not found.", "danger")
-        return redirect(url_for('home'))
-
-    # Check if the item is already in the CartEvent table
-    existing_cart_item = CartEvent.query.filter_by(registration_id=registration_id).first()
-
-    try:
-        if existing_cart_item:
-            # If the item is already in the cart, increase the quantity
-            existing_cart_item.quantity += 1
-        else:
-            # Add a new item to the cart
+    # Process each ID
+    for registration_id in id_list:
+        registration = Registration.query.get(str(registration_id))
+       
+        
+        if registration:
+            # Validate payment status
+            if registration.status.lower() in ['paid', 'pending']:
+                invalid_payments.append(registration_id)
+                continue  # Skip adding this registration
+            
+            # Fetch event price through the relationship
+            event_price = registration.event.price  # Assuming relationship exists
+            # Create a new Cart entry
             new_cart_item = CartEvent(
-                registration_id=registration_id,
-                price=registration.event.price,
-                quantity=1
+                registration_id=str(registration.id),
+                event_price=event_price
             )
             db.session.add(new_cart_item)
+            added_count += 1
 
-        # Commit the transaction to the database
+    # Commit the changes for valid entries
+    db.session.commit()
+    
+    # Flash appropriate messages
+    if invalid_payments:
+        flash(
+            f"Some registrations were not added due to incomplete payment: {', '.join(invalid_payments)}.",
+            category="warning"
+        )
+    
+    if added_count > 0:
+        flash(f"Successfully added {added_count} registrations to the cart!", category="success")
+    else:
+        flash("No registrations were added to the cart. Please check payment status.", category="error")
+    
+    return redirect('/cart_event')
+    
+@app.route('/remove_from_cart/<int:cart_id>', methods=['POST'])
+def remove_from_cart(cart_id):
+    # Find the cart entry by its ID
+    cart_entry = CartEvent.query.get(cart_id)
+
+    if cart_entry:
+        # Delete the entry from the database
+        db.session.delete(cart_entry)
         db.session.commit()
+        flash(f"Item with ID {cart_id} removed from the cart.", category="success")
+    else:
+        flash(f"Item with ID {cart_id} not found.", category="error")
 
-        # Flash a success message
-        flash("Item added to cart successfully!", "success")
-    except Exception as e:
-        # Rollback in case of an error
-        db.session.rollback()
-        flash(f"An error occurred: {e}", "danger")
-
-    # Redirect the user to the cart page
-    return redirect(url_for('cart'))
-
+    # Redirect back to the cart page
+    return redirect('/cart_event')
 
 
 @app.route('/checkout_event', methods=['GET', 'POST'])
@@ -1756,8 +1778,15 @@ def checkout_event():
     # Fetch all cart items
     cart_items = CartEvent.query.all()
 
-    # Calculate the total amount
-    total_amount = sum(item.price * item.quantity for item in cart_items)
+    registrations = (
+        db.session.query(Registration)
+        .join(CartEvent, CartEvent.registration_id == Registration.id)
+        .all()
+    )
+
+    # Determine the payment status based on payment option
+    payment_option = session.get('payment_option', 'Cash on Delivery')  # Default to 'Cash on Delivery'
+    payment_status = "Pending" if payment_option == "Cash on Delivery" else "Paid"
 
     if request.method == 'POST':
         # Customer details
@@ -1770,6 +1799,14 @@ def checkout_event():
         zip_code = request.form.get('zip_code')
         state = request.form.get('state')
 
+        # Fetch competition names only for registrations in the cart
+        competitions_registered = ", ".join(
+            [reg.competition_name for reg in registrations]
+        )
+
+        # Calculate total amount from cart entries
+        total_amount = sum(entry.event_price for entry in cart_items)
+
         # Save customer data
         new_customer = Customer(
             first_name=first_name,
@@ -1780,18 +1817,13 @@ def checkout_event():
             address=address,
             zip_code=zip_code,
             state=state,
+            competitions_registered=competitions_registered,
             total_amount=total_amount
         )
         db.session.add(new_customer)
-
-        # Update CartEvent entries with the customer ID
-        for item in cart_items:
-            item.customer_id = new_customer.id
-
-        # Commit changes
         db.session.commit()
 
-        # Store shipping details in the session for the payment page
+        # Store customer and payment data in session
         session['shipping_data'] = {
             'first_name': first_name,
             'middle_name': middle_name,
@@ -1801,12 +1833,18 @@ def checkout_event():
             'address': address,
             'zip_code': zip_code,
             'state': state,
+            'competitions_registered': competitions_registered,
             'total_amount': total_amount
         }
 
-        return redirect(url_for('payment'))  # Redirect to the payment page
+        return redirect(url_for('payment_event'))  # Redirect to the payment page
 
-    return render_template('checkout_event.html', registrations=cart_items, total_amount=total_amount)
+    return render_template(
+        'checkout_event.html',
+        registrations=registrations,
+        cart_items=cart_items
+    )
+
 
 
 @app.route('/payment_event', methods=['GET', 'POST'])
@@ -1827,7 +1865,7 @@ def payment_event():
             return redirect(url_for('checkout_event'))
 
         # Get all cart items based on registration_id (assuming cart has a registration_id column)
-        cart_items = Cart.query.all()
+        cart_items = CartEvent.query.all()
 
         # Create a list to store event details
         event_details = []
@@ -1868,10 +1906,7 @@ def payment_event():
                 db.session.add(registration)
 
         db.session.commit()
-        for cart_item in cart_items:
-            db.session.delete(cart_item)
-
-        db.session.commit()
+        
 
         # Send email notification with event details and payment status
         send_email_notification(
@@ -1942,7 +1977,7 @@ def send_email_notification(customer_name, customer_email, event_details, paymen
             recipients=[customer_email],
             html=email_body  # Send HTML email
         )
-        notif_mail.send(msg)
+        mail.send(msg)
         print("Email sent successfully!")
     except Exception as e:
         print(f"Error sending email: {e}")
@@ -1954,13 +1989,18 @@ def send_email_notification(customer_name, customer_email, event_details, paymen
 @app.route('/order_summary')
 def order_summary():
     registrations = Registration.query.all()
-    cart_entries=Cart.query.all()
+    cart_entries= CartEvent.query.all()
     
     total_price = sum(entry.event_price for entry in cart_entries)
 
     # Get customer details from session
     shipping_data = session.get('shipping_data', {})
     payment_option = session.get('payment_option')
+
+    for cart_item in cart_entries:
+            db.session.delete(cart_item)
+
+    db.session.commit()
     
 
     return render_template('order_summary.html', 
@@ -1969,6 +2009,7 @@ def order_summary():
                            
                            **shipping_data,
                            payment_option=payment_option,cart_entries=cart_entries)
+
 
 # TEAM 3 CODE AND API
 

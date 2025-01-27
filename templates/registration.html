@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dog Competition Registration</title>
-    <link rel="stylesheet" href="/static/registrationss.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/registrationss.css') }}">
     <style>
         /* Modal styles */
         .alert-container {
@@ -157,7 +157,7 @@
             <!-- Flash message for successful registration or update -->
             
 
-            <form id="registration-form" class="registration-form" method="POST" action="/register">
+            <form id="registration-form" class="registration-form" method="POST" action="/register_competition">
                 <label for="competition-name">Competition Name:</label>
                 <select id="competition-name" name="competition-name" required>
                     <option value="" disabled selected>Select Competition</option>
