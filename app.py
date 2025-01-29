@@ -2579,6 +2579,23 @@ def success_page():
             dog_id=cart_detail['pet_id']
         )
         db.session.add(sale_detail)
+        
+    for cart_detail in get_cart_data()['cart_details']:
+        dog_sales = db.session.query(Dog_sales).filter_by(breed=cart_detail['name']).first()
+        if not dog_sales:
+         dog_sales = Dog_sales(
+            breed=cart_detail['name'],
+            quantity=1,
+            price=cart_detail['price']
+         )
+         db.session.add(dog_sales)
+        else:
+         dog_sales.quantity += 1  # Increment quantity
+       # Update pet availability
+    for cart_detail in get_cart_data()['cart_details']:
+        pet = db.session.query(Pet).filter_by(pet_id=cart_detail['pet_id']).first()
+        if pet:
+            pet.availability_status = 'sold'
 
     cart_items = Final_Cart.query.all()
     for item in cart_items:
