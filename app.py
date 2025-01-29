@@ -17,10 +17,15 @@ import sendgrid
 from datetime import date
 from PIL import Image
 from werkzeug.security import generate_password_hash
-
-
-
-
+from sqlalchemy import MetaData
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+metadata = MetaData(naming_convention=convention)
 app = Flask(__name__)
 app.secret_key = 'pethaven'
 
@@ -28,7 +33,7 @@ app.secret_key = 'pethaven'
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'static/db/Petheaven.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+db = SQLAlchemy(app,metadata=metadata)
 migrate = Migrate(app, db)
 
 # Flask-Mail Configuration
@@ -75,6 +80,7 @@ class Cart(db.Model):
     __tablename__ = 'cart'
 
     id =db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer,db.ForeignKey('customer.id'))
     pet_id =db.Column(db.Integer, nullable=False)
 
 class AdminCart(db.Model):
@@ -250,6 +256,34 @@ class Booking(db.Model):
         self.provider_id = provider_id
         self.booking_date = booking_date
         self.booking_time = booking_time
+
+class Slot_Booked():
+
+    __tablename__ = "slot_booked"
+    id = db.Column(db.Integer,primary_key = True)
+    service_provider_id = db.Column(db.Integer,db.ForeignKey('service_provider.service_provider_id'))
+    start_time = db.Column(db.Time,nullable = True)
+    end_time = db.Column(db.Time,nullable = True)
+    booking_date = db.Column(db.Date,nullable = True)
+    customer_id = db.Column(db.Integer,db.ForeignKey('customer.id'))
+
+    def __init__(self,service_provider_id,start_time,end_time,booking_date,customer_id):
+        self.service_provider_id = service_provider_id
+        self.start_time = start_time
+        self.end_time = end_time
+        self.booking_date = booking_date
+        self.customer_id = customer_id
+        
+class Final_Order():
+    __tablename__ = "final_orders"
+    id = db.Column(db.Integer,primary_key = True,autoincrement = True)
+    customer_id = db.Column(db.Integer,db.ForeignKey('customer.id'))
+    slot_id = db.Column(db.Integer,db.ForeignKey("slot_booked.id"))
+
+    def __init__(self,customer_id,slot_id):
+        self.customer_id = customer_id
+        self.slot_id = slot_id
+        
 
 class ShippingDetails(db.Model):
     __tablename__ = 'shipping_details'
