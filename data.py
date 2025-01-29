@@ -1,26 +1,34 @@
 from faker import Faker
+import random 
+from datetime import datetime, timedelta, time
 from app import db,app
-from app import Pet
+from app import Booking,Sale,Sale_detail
 
 fake = Faker()
 
-unique_breeds = ['Labrador', 'Poodle', 'Bulldog', 'Beagle', 'German Shepherd', 'Golden Retriever', 'Dachshund', 'Shih Tzu', 'Boxer', 'Chihuahua']
+def random_date(start, end):
+    return start + timedelta(days=random.randint(0, int((end - start).days)))
 
-def create_fake_pets(num_pets):
+def random_time():
+    start_hour = random.choice([10, 11, 12, 13, 14, 15])
+    return time(start_hour, 0)
+
+def create_fake_bookings(num_bookings):
+    start_date = datetime.strptime('2024-11-01', '%Y-%m-%d')
+    end_date = datetime.strptime('2025-01-31', '%Y-%m-%d')
     with app.app_context():
-        for i in range(num_pets):
-            pet = Pet(
-                breed=unique_breeds[i % len(unique_breeds)],
-                age_months=fake.random_int(min=1, max=120),
-                health_records=fake.text(max_nb_chars=200),
-                price=fake.random_number(digits=5, fix_len=True),
-                availability_status=fake.random_element(elements=('Available', 'Adopted', 'Pending')),
-                achivement=fake.sentence(nb_words=6),
-                image=fake.image_url(),
-                description=fake.text(max_nb_chars=200)
-            )
-            db.session.add(pet)
-        db.session.commit()
 
-# Create 10 fake pets
-create_fake_pets(10)
+        for _ in range(num_bookings):
+            booking_date = random_date(start_date, end_date)
+            booking_time = random_time()
+            
+            sale_detail = Sale_detail(
+                sale_id=random.randint(1, 10),  # Assuming you have 10 sales
+                breed_name=fake.random_element(elements=('Labrador', 'Poodle', 'Bulldog', 'Beagle', 'German Shepherd')),
+                price=fake.random_number(digits=5, fix_len=True),
+                dog_id=random.randint(1, 10)  # Assuming you have 10 dogs
+            )
+            db.session.add(sale_detail)
+        db.session.commit()
+# Create 10 fake bookings
+create_fake_bookings(20)

@@ -80,7 +80,7 @@ class Cart(db.Model):
     __tablename__ = 'cart'
 
     id =db.Column(db.Integer, primary_key=True)
-    customer_id = db.Column(db.Integer,db.ForeignKey('customer.id'))
+    # customer_id = db.Column(db.Integer,db.ForeignKey('customer.id'))
     pet_id =db.Column(db.Integer, nullable=False)
 
 class AdminCart(db.Model):
@@ -1002,7 +1002,7 @@ def view_cart():
     for i in range(len(cart_data_3)):
         cost += cart_data_3[i]['cost']
 
-    gst = cost * 0.05
+    gst = int(cost * 0.05)
     sgst = gst // 2
 
     total = cost + gst + sgst
@@ -1481,7 +1481,7 @@ def register_competition():
         if event:
             # Save the registration
             new_registration = Registration(
-                id=generate_dog_id(),
+                # id=generate_dog_id(),
                 event_id=event.id,  # Use the event's ID
                 competition_name=event.name,  # Use event name from the found event
                 dog_name=dog_name,
@@ -3014,4 +3014,5 @@ def edit_request():
 if __name__ == '__main__':
     # with app.app_context():
     #     db.create_all()
+    # with the app funationalities inlclude all the features 
     app.run(debug=True)
