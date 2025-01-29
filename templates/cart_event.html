@@ -113,7 +113,7 @@
                         <td>{{ entry.id }}</td>
                         <td>{{ entry.registration_id }}</td>
                         <td>{{ entry.registration.competition_name }}</td>
-                        <td>₹{{ entry.event_price }}</td>
+                        <td>₹{{ entry.price }}</td>
                         <td>
                             <form action="/remove_from_cart/{{ entry.id }}" method="post" style="display:inline;">
                                 <button type="submit">Remove</button>

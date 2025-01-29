@@ -20,6 +20,7 @@ from werkzeug.security import generate_password_hash
 
 
 
+
 app = Flask(__name__)
 app.secret_key = 'pethaven'
 
@@ -34,8 +35,8 @@ migrate = Migrate(app, db)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'jasnavig9@gmail.com'
-app.config['MAIL_PASSWORD'] = 'guze fwag qsff hppm'
+app.config['MAIL_USERNAME'] = 'chakkasatwika225@gmail.com'
+app.config['MAIL_PASSWORD'] = 'sqer mjwd rkah ynll'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@gmail.com'
 notif_mail = Mail(app)
 
@@ -184,9 +185,9 @@ class CartEvent(db.Model):
     __tablename__ = 'cart_event'
     id = db.Column(db.Integer, primary_key=True)
     registration_id = db.Column(db.String, db.ForeignKey('registration.id'), nullable=False)
-    event_price = db.Column(db.Float, db.ForeignKey('event.price'), nullable=False)
+    price = db.Column(db.Float, db.ForeignKey('event.price'), nullable=False)
     
-    registration = db.relationship('Registration', backref='cart_items')
+    registration = db.relationship('Registration', backref='cart_items',lazy='joined')
     event = db.relationship('Event', backref='cart_items')
 
 
@@ -956,7 +957,7 @@ def view_cart():
         event = Registration.query.get(item.registration_id)
         if event:
             d = {
-                'id': item.cart_id,
+                'id': item.id,
                 'name': event.competition_name,
                 'registration_id': item.registration_id,
                 'cost': item.price
@@ -1619,7 +1620,7 @@ def send_event_registration_email(customer_name, customer_email, event_name, eve
             recipients=[customer_email],
             body=email_body
         )
-        mail.send(msg)
+        notif_mail.send(msg)
         print(f"Email sent to {customer_name} ({customer_email})")
     except Exception as e:
         print(f"Error sending email to {customer_name}: {e}")
@@ -1701,7 +1702,7 @@ def cart_event():
     cart_entries = CartEvent.query.all()
     events=Event.query.all()
 
-    total_price = sum(entry.event_price for entry in cart_entries)
+    total_price = sum(entry.price for entry in cart_entries)
     
     return render_template('cart_event.html', cart_entries=cart_entries, total_price=total_price,registrations=registrations,events=events)
 
@@ -1723,18 +1724,18 @@ def add_item_to_cart():
         registration = Registration.query.get(str(registration_id))
        
         
-        if registration:
+        if registration.event:
             # Validate payment status
             if registration.status.lower() in ['paid', 'pending']:
                 invalid_payments.append(registration_id)
                 continue  # Skip adding this registration
             
             # Fetch event price through the relationship
-            event_price = registration.event.price  # Assuming relationship exists
+            price = registration.event.price  # Assuming relationship exists
             # Create a new Cart entry
             new_cart_item = CartEvent(
                 registration_id=str(registration.id),
-                event_price=event_price
+                price =registration.event.price
             )
             db.session.add(new_cart_item)
             added_count += 1
@@ -1754,9 +1755,9 @@ def add_item_to_cart():
     else:
         flash("No registrations were added to the cart. Please check payment status.", category="error")
     
-    return redirect('/cart_event')
+    return redirect('/cart')
     
-@app.route('/remove_from_cart/<int:cart_id>', methods=['POST'])
+@app.route('/remove_from_cart/<int:cart_id>', methods=['GET'])
 def remove_from_cart(cart_id):
     # Find the cart entry by its ID
     cart_entry = CartEvent.query.get(cart_id)
@@ -1770,7 +1771,7 @@ def remove_from_cart(cart_id):
         flash(f"Item with ID {cart_id} not found.", category="error")
 
     # Redirect back to the cart page
-    return redirect('/cart_event')
+    return redirect('/cart')
 
 
 @app.route('/checkout_event', methods=['GET', 'POST'])
@@ -1805,7 +1806,7 @@ def checkout_event():
         )
 
         # Calculate total amount from cart entries
-        total_amount = sum(entry.event_price for entry in cart_items)
+        total_amount = sum(entry.price for entry in cart_items)
 
         # Save customer data
         new_customer = Customer(
@@ -1977,7 +1978,7 @@ def send_email_notification(customer_name, customer_email, event_details, paymen
             recipients=[customer_email],
             html=email_body  # Send HTML email
         )
-        mail.send(msg)
+        notif_mail.send(msg)
         print("Email sent successfully!")
     except Exception as e:
         print(f"Error sending email: {e}")
@@ -1991,7 +1992,7 @@ def order_summary():
     registrations = Registration.query.all()
     cart_entries= CartEvent.query.all()
     
-    total_price = sum(entry.event_price for entry in cart_entries)
+    total_price = sum(entry.price for entry in cart_entries)
 
     # Get customer details from session
     shipping_data = session.get('shipping_data', {})
@@ -2977,6 +2978,6 @@ def edit_request():
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    # with app.app_context():
+    #     db.create_all()
     app.run(debug=True)
