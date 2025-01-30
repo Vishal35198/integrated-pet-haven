@@ -169,7 +169,7 @@
                         {% endif %}
                     {% endwith %}
 
-                    <form method="POST" class="needs-validation" novalidate>
+                    <form method="POST" class="needs-validation" enctype="multipart/form-data" novalidate>
                         <div class="mb-3">
                             <label for="full_name" class="form-label">Full Name</label>
                             <input type="text" class="form-control" id="full_name" name="full_name" required>
@@ -209,11 +209,12 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="certifications" class="form-label">Certifications</label>
-                            <textarea class="form-control" id="certifications" name="certifications" rows="3" required></textarea>
-                            <div class="invalid-feedback">Please list your certifications.</div>
-                        </div>
+                      <div class="mb-3">
+                          <label for="certifications" class="form-label">Upload Certificate Documents (PDF only)</label>
+                          <input type="file" class="form-control" id="certifications" name="certifications" accept=".pdf" multiple required>
+                          <div class="invalid-feedback">Please upload your certificate documents.</div>
+                          <small class="form-text text-muted">You can select multiple PDF files. Maximum file size: 20MB each.</small>
+                      </div>
 
                         <div class="mb-3">
                             <label for="experience" class="form-label">Experience</label>

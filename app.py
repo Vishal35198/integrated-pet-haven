@@ -1,5 +1,6 @@
 import re
 import uuid 
+import time
 from flask import send_from_directory
 from flask import Flask, flash, redirect, render_template, request, jsonify, session, url_for, session as flask_session
 from flask import abort
@@ -2990,10 +2991,36 @@ def trainer_images(filename):
     return send_from_directory('static/images/trainer', filename)
 
 
+app.config['UPLOAD_FOLDER'] = 'static/certificates'
+app.config['MAX_CONTENT_LENGTH'] = 20* 1024 * 1024  # 5MB max-limit
+ALLOWED_EXTENSIONS = {'pdf'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/edit_request', methods=['GET', 'POST'])
 def edit_request():
     if request.method == 'POST':
         try:
+            # Create upload directory if it doesn't exist
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            
+            # Handle file uploads
+            uploaded_files = request.files.getlist('certifications')
+            file_paths = []
+            
+            for file in uploaded_files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    # Add timestamp to filename to make it unique
+                    filename = f"{int(time.time())}_{filename}"
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    file.save(file_path)
+                    file_paths.append(file_path)
+                else:
+                    flash('Invalid file type. Please upload PDF files only.', 'danger')
+                    return redirect(url_for('edit_request'))
+
             # Get form data
             hashed_password = generate_password_hash(request.form['password']) if request.form['password'] else None
             
@@ -3004,7 +3031,7 @@ def edit_request():
                 service_type=request.form['service_type'],
                 location=request.form['location'],
                 hourly_rate=float(request.form['hourly_rate']),
-                certifications=request.form['certifications'],
+                certifications=','.join(file_paths),  # Store file paths as comma-separated string
                 experience=request.form['experience']
             )
             
@@ -3016,9 +3043,9 @@ def edit_request():
             
         except Exception as e:
             flash(f'An error occurred: {str(e)}', 'danger')
+            return redirect(url_for('edit_request'))
             
     return render_template('edit_request.html')
-
    
 @app.route('/trainer_services')
 def trainer_services():
