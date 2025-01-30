@@ -10,12 +10,12 @@
     <header>
         <h1>Pet Haven - Service Provider Dashboard</h1>
         <div class="switch-button">
-            <button>Edit Details</button>
+            <button  onclick="window.location.href='{{ url_for('edit_request') }}'";>Edit Details</button>
         </div>
     </header>
     <nav>
         <a href="service_provider_landing.html">Home</a>
-        <a href="dog_spa.html">Dog Spa and Management</a>
+        <a href="{{url_for('trainer_services')}}">Dog Spa and Management</a>
         <div class="user-profile">
             <img src="../image/user_icon.png" alt="User">
             <span>Bhanvi</span>

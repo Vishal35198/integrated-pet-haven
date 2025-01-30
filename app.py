@@ -2510,14 +2510,6 @@ PetCare Team"""
             notif_mail.send(msg)
         except Exception as e:
             print(f"Error sending email: {str(e)}")
-        # Permanently save bookings
-        for item in cart_items:
-            booking = Booking.query.filter_by(provider_id=item.service_provider_id).first()
-            if booking:
-                booking.name = shipping_details['first_name'] + ' ' + shipping_details['last_name']
-                booking.email = shipping_details['email']
-                booking.phone = shipping_details['contact']
-                db.session.commit()
 
         # Clear cart after successful order
         for item in cart_items:
@@ -3026,6 +3018,32 @@ def edit_request():
             flash(f'An error occurred: {str(e)}', 'danger')
             
     return render_template('edit_request.html')
+
+   
+@app.route('/trainer_services')
+def trainer_services():
+    services = Service.query.all()
+    return render_template('trainer_services.html', services=services)
+
+@app.route('/trainer_trainerpg')
+def trainer_trainerpg():
+    services = Service.query.all()
+    trainers = Service_Provider.query.all()
+    service_list = [{'id': s.id, 'name': s.title} for s in services]
+    # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
+    return render_template('trainer_trainerpg.html', services=services,trainers = trainers,service_list=service_list)
+
+@app.route('/trainer_book')
+def trainer_book():
+    service_id = request.args.get('service_id')
+    provider_id = request.args.get('provider_id')
+    
+    service = Service.query.get(service_id) if service_id else None
+    provider = Service_Provider.query.get(provider_id) if provider_id else None
+
+    # cart_item_ids = [item.service_provider_id for item in Cart.query.all()]
+    
+    return render_template('trainer_book.html', service=service, provider=provider)
 
 
 if __name__ == '__main__':
