@@ -173,7 +173,7 @@
             {% if service %}
             {% if provider %}
             <div class="trainer-photo">
-                <img src="{{ url_for('static', filename='images/trainer' ~ provider.service_provider_id ~'.jpg') }}"
+                <img src="{{ url_for('static', filename='images/trainers/trainer' ~ provider.service_provider_id ~'.jpg') }}"
                     alt="Trainer Photo">
             </div>
             <div>
@@ -203,9 +203,9 @@
         <div class="photo-gallery section">
             <h2>Shop Photos</h2>
             <div>
-                <img src="{{ url_for('static', filename='images/shop1.jpeg') }} " alt="Shop Photo 1">
-                <img src="{{ url_for('static', filename='images/shop2.jpeg') }}" alt="Shop Photo 2">
-                <img src="{{ url_for('static', filename='images/shop3.jpeg') }}" alt="Shop Photo 3">
+                <img src="{{ url_for('static', filename='images/trainers/shop1.jpeg') }} " alt="Shop Photo 1">
+                <img src="{{ url_for('static', filename='images/trainers/shop2.jpeg') }}" alt="Shop Photo 2">
+                <img src="{{ url_for('static', filename='images/trainers/shop3.jpeg') }}" alt="Shop Photo 3">
             </div>
         </div>
 
