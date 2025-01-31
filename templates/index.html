@@ -24,6 +24,7 @@
     <select id="role" required>
       <option value='customer'>Customer</option>
       <option value='service-provider'>Service Provider</option>
+      <option value='admin'>Admin</option>
     </select>
   </div>
   <div class="form-group">
@@ -45,109 +46,122 @@
 </form>
 
 <!-- Register Form -->
-<form id="register-form" action="/submit_service_provider" method="POST" enctype="multipart/form-data">
+<form id="register-form" action="/register" method="POST" enctype="multipart/form-data">
   <div class="form-group">
-      <label for="role-select">Register as <span style="color: red;">*</span></label>
-      <select id="role-select" onchange="toggleFields()" required>
-          <option value="customer">Customer</option>
-          <option value="service-provider">Service Provider</option>
-      </select>
+    <label for="role-select">Register as <span style="color: red;">*</span></label>
+    <select id="role-select" onchange="toggleFields()" required>
+      <option value="customer">Customer</option>
+      <option value="service-provider">Service Provider</option>
+    </select>
   </div>
 
+  <!-- Common Fields: Full Name and Email -->
   <div id="common-fields">
-      <div class="form-group">
-          <label for="reg-name">Fullname <span style="color: red;">*</span></label>
-          <input type="text" id="reg-name" placeholder="Enter your name" required>
-      </div>
-      <div class="form-group">
-          <label for="reg-email">Email <span style="color: red;">*</span></label>
-          <input type="email" id="reg-email" placeholder="Enter your email" required>
-      </div>
-      <div class="form-group">
-          <label for="reg-password">Set Password <span style="color: red;">*</span></label>
-          <input type="password" id="reg-password" placeholder="Enter password" required>
-      </div>
-      <div class="form-group">
-          <label for="confirm-password">Confirm Password <span style="color: red;">*</span></label>
-          <input type="password" id="confirm-password" placeholder="Confirm password" required>
-      </div>
+    <div class="form-group">
+      <label for="reg-name">Full Name <span style="color: red;">*</span></label>
+      <input type="text" id="reg-name" placeholder="Enter your name" required>
+    </div>
+    <div class="form-group">
+      <label for="reg-email">Email <span style="color: red;">*</span></label>
+      <input type="email" id="reg-email" placeholder="Enter your email" required>
+    </div>
   </div>
 
+  <!-- Customer-Specific Fields: Password Fields -->
+  <div id="customer-fields">
+    <div class="form-group">
+      <label for="reg-password">Set Password <span style="color: red;">*</span></label>
+      <input type="password" id="reg-password" placeholder="Enter password" required>
+    </div>
+    <div class="form-group">
+      <label for="confirm-password">Confirm Password <span style="color: red;">*</span></label>
+      <input type="password" id="confirm-password" placeholder="Confirm password" required>
+    </div>
+  </div>
+
+  <!-- Service Provider-Specific Fields -->
   <div id="service-provider-fields" style="display: none;">
-      <div class="form-group">
-          <label for="service-type">Service Type <span style="color: red;">*</span></label>
-          <select id="service-type" required>
-              <option value="grooming">Grooming</option>
-              <option value="training">Training</option>
-          </select>
-      </div>
-      <div class="form-group">
-          <label for="location">Location <span style="color: red;">*</span></label>
-          <input type="text" id="location" placeholder="Enter your location" required>
-      </div>
-      <div class="form-group">
-          <label for="hourly-rate">Hourly Rate <span style="color: red;">*</span></label>
-          <input type="number" id="hourly-rate" placeholder="Enter hourly rate" required>
-      </div>
-      <div class="form-group">
-          <label for="certifications">Certifications</label>
-          <input type="text" id="certifications" placeholder="Enter certifications">
-      </div>
-      <div class="form-group">
-          <label for="experience">Experience <span style="color: red;">*</span></label>
-          <input type="number" id="experience" placeholder="Enter years of experience" required>
-      </div>
+    <div class="form-group">
+      <label for="service-type">Service Type <span style="color: red;">*</span></label>
+      <select id="service-type" required>
+        <option value="grooming">Grooming</option>
+        <option value="training">Training</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="location">Location <span style="color: red;">*</span></label>
+      <input type="text" id="location" placeholder="Enter your location" required>
+    </div>
+    <div class="form-group">
+      <label for="hourly-rate">Hourly Rate <span style="color: red;">*</span></label>
+      <input type="number" id="hourly-rate" placeholder="Enter hourly rate" required>
+    </div>
+    <div class="form-group">
+      <label for="certifications">Certifications</label>
+      <input type="text" id="certifications" placeholder="Enter certifications">
+    </div>
+    <div class="form-group">
+      <label for="experience">Experience <span style="color: red;">*</span></label>
+      <input type="number" id="experience" placeholder="Enter years of experience" required>
+    </div>
+    <div class="form-group">
+      <label for="id-proof">Government ID Proof <span style="color: red;">*</span></label>
+      <input type="file" id="id-proof" name="id-proof" accept=".png,.jpg,.jpeg,.pdf" required>
+    </div>
+    <div class="form-group">
+      <label for="qualification">Educational Qualification Certificates <span style="color: red;">*</span></label>
+      <input type="file" id="qualification" name="qualification" accept=".png,.jpg,.jpeg,.pdf" required>
+    </div>
   </div>
 
   <button type="button" class="submit-btn" onclick="validateAndShowOtp()">Register</button>
-  <!-- Link to Upload Documents -->
-  <div id="upload-documents-link" style="display: none;">
-    <p>After registration, <a href="/upload-documents">click here</a> to upload documents.</p>
-  </div>
 </form>
-  
-  <script>
-    function toggleFields() {
-        const roleSelect = document.getElementById('role-select');
-        const serviceProviderFields = document.getElementById('service-provider-fields');
-        const uploadDocumentsLink = document.getElementById('upload-documents-link');
 
-        if (roleSelect.value === 'service-provider') {
-            serviceProviderFields.style.display = 'block';
-            uploadDocumentsLink.style.display = 'block';
-        } else {
-            serviceProviderFields.style.display = 'none';
-            uploadDocumentsLink.style.display = 'none';
+<script>
+  function toggleFields() {
+    const roleSelect = document.getElementById('role-select');
+    const customerFields = document.getElementById('customer-fields');
+    const serviceProviderFields = document.getElementById('service-provider-fields');
+
+    if (roleSelect.value === 'service-provider') {
+      serviceProviderFields.style.display = 'block'; // Show service provider fields
+      customerFields.style.display = 'none'; // Hide customer fields
+    } else {
+      serviceProviderFields.style.display = 'none'; // Hide service provider fields
+      customerFields.style.display = 'block'; // Show customer fields
+    }
+  }
+
+  function validateAndShowOtp() {
+    const role = document.getElementById('role-select').value;
+    const requiredFields = document.querySelectorAll('#register-form [required]');
+    let valid = true;
+
+    // Validate only visible required fields
+    requiredFields.forEach(field => {
+        if (field.offsetParent !== null && !field.value.trim()) {
+            alert('Please fill all the mandatory fields.');
+            field.focus();
+            valid = false;
+            return; // Exit loop for first invalid field
         }
+    });
+
+    if (!valid) return; // Stop execution if any field is invalid
+
+    // Email validation (applies to all roles)
+    const emailField = document.getElementById('reg-email');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(emailField.value)) {
+        alert('Invalid email address.');
+        emailField.focus();
+        return;
     }
 
-    function validateAndShowOtp() {
-        const requiredFields = document.querySelectorAll('#register-form [required]');
-        let valid = true;
-
-        // Validate only visible required fields
-        requiredFields.forEach(field => {
-            if (field.offsetParent !== null && !field.value.trim()) {
-                alert('Please fill all the mandatory fields.');
-                field.focus();
-                valid = false;
-                return; // Exit loop for first invalid field
-            }
-        });
-
-        if (!valid) return; // Stop execution if any field is invalid
-
-        // Additional email and password validations
-        const emailField = document.getElementById('reg-email');
+    // Password validation (only for customers)
+    if (role === 'customer') {
         const passwordField = document.getElementById('reg-password');
         const confirmPasswordField = document.getElementById('confirm-password');
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-        if (!emailRegex.test(emailField.value)) {
-            alert('Invalid email address.');
-            emailField.focus();
-            return;
-        }
 
         const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
         if (!passwordRegex.test(passwordField.value)) {
@@ -161,10 +175,11 @@
             confirmPasswordField.focus();
             return;
         }
-
-        // If everything is valid, show OTP
-        showOtp();
     }
+
+    // If everything is valid, show OTP
+    showOtp();
+}
 
     function showOtp() {
         alert('OTP has been sent to your registered email.');
@@ -173,6 +188,29 @@
     }
 </script>
   
+<script>
+  // Validate file formats
+  function validateFileType(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const error = document.getElementById(errorId);
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      const allowedExtensions = ['png', 'jpg', 'jpeg', 'pdf'];
+      if (file && !allowedExtensions.includes(file.name.split('.').pop().toLowerCase())) {
+        error.style.display = 'block';
+        input.value = '';
+      } else {
+        error.style.display = 'none';
+      }
+    });
+  }
+
+  // Attach validation to file inputs
+  validateFileType('id-proof', 'id-proof-error');
+  validateFileType('qualification', 'qualification-error');
+  validateFileType('certifications-doc', 'certifications-doc-error');
+</script>  
+
 
  <script>
   function showOtp() {
@@ -311,36 +349,67 @@
     const fullname = sessionStorage.getItem('fullname');
     const password = sessionStorage.getItem('password');
     const role = sessionStorage.getItem('role');
-    
-    if (role==='customer'){
-      var data={otp: otp, fullname: fullname, password: password ,role: role};
+
+    let formData = new FormData();
+    formData.append("otp", otp);
+    formData.append("fullname", fullname);
+    formData.append("password", password);
+    formData.append("role", role);
+
+    if (role === "service-provider") {
+        formData.append("service_type", sessionStorage.getItem("service_type"));
+        formData.append("location", sessionStorage.getItem("location"));
+        formData.append("hourly_rate", sessionStorage.getItem("hourly_rate"));
+        formData.append("certifications", sessionStorage.getItem("certifications"));
+        formData.append("experience", sessionStorage.getItem("experience"));
+        
+        let idProofFile = document.getElementById("id-proof").files[0];
+        let qualificationFile = document.getElementById("qualification").files[0];
+
+        if (idProofFile) formData.append("id-proof", idProofFile);
+        if (qualificationFile) formData.append("qualification", qualificationFile);
     }
-    else{
-      
-      const service_type = sessionStorage.getItem('service_type');
-      const location = sessionStorage.getItem('location');
-      const hourly_rate = sessionStorage.getItem('hourly_rate');
-      const certifications = sessionStorage.getItem('certifications');
-      const experience = sessionStorage.getItem('experience');
-      var data={otp: otp, fullname: fullname, password: password ,role: role,service_type:service_type,location:location,hourly_rate:hourly_rate,certifications:certifications,experience:experience};
-    }
+
+
     fetch('/verify-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Registration successful!');
-            location.reload();
-        } else {
-            alert(data.message);
-        }
-    });
-  }
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === 'success') {
+                if (role === 'customer') {
+                    alert('Registration successful!');
+                    sendRegistrationEmail(fullname, sessionStorage.getItem('email'));
+                } else if (role === 'service-provider') {
+                    alert('Documents uploaded. Wait for admin approval.');
+                    window.location.href = '/home'; // Redirect to customer.html for service providers
+                }
+            } else {
+                alert(data.message);
+            }
+        });
+}
 
-  function login() {
+
+function sendRegistrationEmail(fullname, email) {
+    fetch('/send-registration-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullname: fullname, email: email }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (data.status === 'success') {
+                console.log('Registration email sent.');
+            } else {
+                console.error(data.message);
+            }
+        });
+}
+
+
+function login() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value.trim();
     const role = document.getElementById('role').value;
@@ -350,6 +419,7 @@
         return;
     }
 
+    // Handle login for service providers and customers
     fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -357,12 +427,9 @@
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Server response:', data);  // Debug log
-        
         if (data.status === 'success') {
             if (data.redirect_url) {
-                console.log('Redirecting to:', data.redirect_url);  // Debug log
-                window.location.replace(data.redirect_url);  // Using replace instead of href
+                window.location.replace(data.redirect_url); // Redirect based on role (either service provider or customer)
             }
         } else {
             alert(data.message || 'Login failed');
@@ -373,6 +440,7 @@
         alert('An error occurred during login.');
     });
 }
+
 
   function sendForgotPasswordOtp() {
     const email = document.getElementById('forgot-email').value;
@@ -425,42 +493,37 @@
     const role = document.getElementById('role-select').value;
     const fullname = document.getElementById('reg-name').value;
     const email = document.getElementById('reg-email').value;
-    const password = document.getElementById('reg-password').value;
-    const confirmPassword = document.getElementById('confirm-password').value;
+    const data = { fullname, email, role };
 
-    const data = {
-      fullname,
-      email,
-      password,
-      confirm_password: confirmPassword,
-      role
-    };
-
-    if (role === 'service-provider') {
-      data.service_type = document.getElementById('service-type').value;
-      data.location = document.getElementById('location').value;
-      data.hourly_rate = document.getElementById('hourly-rate').value;
-      data.certifications = document.getElementById('certifications').value;
-      data.experience = document.getElementById('experience').value;
+    if (role === 'customer') {
+        data.password = document.getElementById('reg-password').value;
+        data.confirm_password = document.getElementById('confirm-password').value;
+    } else {
+        data.service_type = document.getElementById('service-type').value;
+        data.location = document.getElementById('location').value;
+        data.hourly_rate = document.getElementById('hourly-rate').value;
+        data.certifications = document.getElementById('certifications').value;
+        data.experience = document.getElementById('experience').value;
     }
 
     fetch('/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     })
-      .then(response => response.json())
-      .then(responseData => {
+    .then(response => response.json())
+    .then(responseData => {
         alert(responseData.message);
-      })
-      .catch(error => console.error('Error:', error));
-  }
+    })
+    .catch(error => console.error('Error:', error));
+}
 
+// Ensure toggleFields() runs on page load to apply correct visibility
+window.onload = function () {
+    toggleFields();
+};
 
-
-
-
-  
+document.getElementById('role-select').addEventListener('change', toggleFields);
 
 </script>
 
