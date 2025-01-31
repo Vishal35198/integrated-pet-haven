@@ -11,6 +11,7 @@ from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 import random
 import os
+import sendgrid
 from bcrypt import checkpw
 from flask import Flask, render_template, request, redirect, flash, url_for, session, send_from_directory
 import sendgrid
@@ -19,6 +20,15 @@ from datetime import date
 from PIL import Image
 from werkzeug.security import generate_password_hash
 from sqlalchemy import MetaData
+from sqlalchemy import and_
+from sqlalchemy import func
+from sqlalchemy import MetaData
+import plotly.express as px
+import pandas as pd
+from flask_sqlalchemy import SQLAlchemy
+import plotly.io as pio
+from sqlalchemy.sql import text
+
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -881,28 +891,33 @@ def show_users():
             print("No user data found in the database.")
 
 # Function to handle filtering logic
-def build_filter_query(breed, price, age):
-    query =db.session.query(Pet)
+from sqlalchemy import func
 
+def build_filter_query(breed, price_filter, age_filter):
+    query = db.session.query(Pet)
+
+    # ✅ Case-insensitive breed filtering
     if breed and breed.strip():
-        query = query.filter(Pet.breed == breed.strip())
+        query = query.filter(func.lower(Pet.breed) == breed.strip().lower())  
 
-    if price:
-        if price == "low":
+    # ✅ Price Filtering (Same as Before)
+    if price_filter:
+        if price_filter == "low":
             query = query.filter(Pet.price < 6000)
-        elif price == "medium":
+        elif price_filter == "medium":
             query = query.filter(Pet.price.between(6000, 10000))
-        elif price == "high":
+        elif price_filter == "high":
             query = query.filter(Pet.price.between(10000, 15000))
-        elif price == "very_high":
+        elif price_filter == "very high":  
             query = query.filter(Pet.price > 15000)
 
-    if age:
-        if age == "Puppy":
+    # ✅ Age Filtering (Same as Before)
+    if age_filter:
+        if age_filter == "Puppy":
             query = query.filter(Pet.age_months <= 12)
-        elif age == "Young":
-            query = query.filter(Pet.age_months > 12, Pet.age_months <= 36)
-        elif age == "Adult":
+        elif age_filter == "Young":
+            query = query.filter(and_(Pet.age_months > 12, Pet.age_months <= 36))
+        elif age_filter == "Adult":
             query = query.filter(Pet.age_months > 36)
 
     return query
@@ -915,14 +930,27 @@ def cannine_home():
     price_filter = request.args.get('price')
     age_filter = request.args.get('age')
 
+    unique_breeds = db.session.query(func.lower(Pet.breed)).distinct().all()
+    breed_options = sorted(set(breed[0].capitalize() for breed in unique_breeds))
+
+    price_ranges = [
+        ("low", "Below ₹6000"),
+        ("medium", "₹6000 - ₹10000"),
+        ("high", "₹10000 - ₹15000"),
+        ("very_high", "Above ₹15000")
+    ]
+
     dogs_query = build_filter_query(breed_filter, price_filter, age_filter)
     dogs = dogs_query.all()
 
-    for dog in dogs:
-        dog.description = f"A {dog.breed} ({dog.age_months} months old) with health status: '{dog.health_records or 'No records'}' and achievements: '{dog.achivement or 'None'}'."
-    
-    return render_template("index_cannine.html", dogs=dogs, role=role)
-        
+    return render_template(
+        "index_cannine.html",
+        dogs=dogs,
+        breed_options=breed_options,
+        price_ranges=price_ranges,
+        role=role
+    )
+
 
 def get_cart_data():
     cart_items = db.session.query(Cart).all()
@@ -1062,18 +1090,26 @@ def policy():
 
 @app.route('/admin', methods=['GET'])
 def admin():
-    role = request.args.get('role', default='admin')
     breed_filter = request.args.get('breed')
-    price_filter = request.args.get('price')
+    price_filter = request.args.get('price')  # ✅ Matches HTML dropdown name
     age_filter = request.args.get('age')
+
+    unique_breeds = db.session.query(func.lower(Pet.breed)).distinct().all()
+    breed_options = sorted(set(breed[0].capitalize() for breed in unique_breeds))
 
     dogs_query = build_filter_query(breed_filter, price_filter, age_filter)
     dogs = dogs_query.all()
 
-    for dog in dogs:
-        dog.description = f"A {dog.breed} ({dog.age_months} months old) with health status: '{dog.health_records or 'No records'}' and achievements: '{dog.achivement or 'None'}'."
-    
-    return render_template("admin.html", dogs=dogs, breed=breed_filter, price=price_filter, age=age_filter)
+    return render_template(
+        "admin.html",
+        dogs=dogs,
+        breed_options=breed_options,
+        breed=breed_filter,
+        price=price_filter,  # ✅ Pass price filter to HTML
+        age=age_filter
+    )
+
+
 
 @app.route('/edit_dog/<int:pet_id>', methods=['POST', 'GET'])
 def edit_dog(pet_id):
@@ -1110,6 +1146,31 @@ def edit_dog(pet_id):
                 flash(f"Error in editing {pet.breed}", "error")
 
     return render_template('edit_dog.html',pet=pet)
+
+# Delete Dog (Admin)
+@app.route('/delete_dog/<int:pet_id>', methods=['POST'])
+def delete_dog(pet_id):
+    try:
+        pet = db.session.query(Pet).filter_by(pet_id=pet_id).first()
+        if not pet:
+            flash("Pet not found", "error")
+            return redirect(url_for('admin'))
+
+        if pet.image:
+            image_path = os.path.join(os.path.dirname(__file__), 'static', 'images', pet.image)
+            if os.path.isfile(image_path):
+                os.remove(image_path)
+
+        db.session.delete(pet)
+        db.session.commit()
+        flash(f"{pet.breed} has been deleted successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash("Error in deleting pet", "error")
+
+    return redirect(url_for('admin'))
+
 
 @app.route('/add_dog', methods=['GET', 'POST'])
 def add_dog():
@@ -1164,120 +1225,9 @@ def add_dog():
             
     return render_template('add_dog.html')
 
-@app.route('/delete_dog/<int:pet_id>', methods=['POST'])
-def delete_dog(pet_id):
-    try:
-        pet = db.session.query(Pet).filter_by(pet_id=pet_id).first()
-        
-        if not pet:
-            flash("Pet not found", "error")
-            return redirect(url_for('admin'))
-            
-        if pet.image:
-            image_path = os.path.join(os.path.dirname(__file__), 'static', 'images', pet.image)
-            
-            try:
-                if os.path.isfile(image_path):
-                    os.remove(image_path)
-                    print(f"Successfully deleted image: {image_path}")
-                else:
-                    print(f"Image file not found: {image_path}")
-            except Exception as img_error:
-                print(f"Error deleting image file: {str(img_error)}")
-                
-        db.session.delete(pet)
-        db.session.commit()
-        
-        flash(f"{pet.breed} has been deleted successfully!", "success")
-        return redirect(url_for('admin'))
-        
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error in delete_dog: {str(e)}")
-        flash(f"Error in deleting {pet.breed}", "error")
-        return redirect(url_for('admin'))
-
-
-def get_admin_cart_data():
-    admin_cart_items = db.session.query(AdminCart).all()
-    admin_cart_details = []
-    for item in admin_cart_items:
-        pet = db.session.query(Pet).filter_by(pet_id=item.pet_id).first()
-        if pet:
-            admin_cart_details.append({
-                'id': item.id,
-                'pet_id': pet.pet_id,
-                'name': pet.breed,
-                'price': float(pet.price),
-                'total': float(pet.price),
-                'image': pet.image
-            })
-
-    subtotal = sum(item['total'] for item in admin_cart_details)
-    shipping = 500 if subtotal > 0 else 0
-    gst = subtotal * 0.05
-    sgst = subtotal * 0.05
-    total = subtotal + shipping + gst + sgst
-
-    return {
-        'cart_details': admin_cart_details,
-        'subtotal': subtotal,
-        'shipping': shipping,
-        'gst': gst,
-        'sgst': sgst,
-        'total': total
-    }
 
 # Admin Cart Routes
-@app.route('/admin_cart', methods=['GET'])
-def view_admin_cart():
-    cart_data = get_admin_cart_data()
-    return render_template(
-        'admin_cart.html',
-        admin_cart_items=cart_data['cart_details'],  # Changed from cart_items to admin_cart_items
-        subtotal=cart_data['subtotal'],
-        shipping=cart_data['shipping'],
-        gst=cart_data['gst'],
-        sgst=cart_data['sgst'],
-        total=cart_data['total'],
-        role='admin'
-    )
 
-@app.route('/admin/add_to_cart/<int:pet_id>', methods=['POST'])
-def admin_add_to_cart(pet_id):
-    try:
-        pet = db.session.query(Pet).filter_by(pet_id=pet_id).first()
-        if not pet:
-            return "Pet not found", 404
-
-        if pet.availability_status == 'sold':
-            flash(f"{pet.breed} is no longer available for purchase.", "warning")
-            return redirect(url_for('admin'))
-
-        admin_cart_item = db.session.query(AdminCart).filter_by(pet_id=pet_id).first()
-        if admin_cart_item:
-            flash(f"{pet.breed} is already in your cart!", "info")
-            return redirect(url_for('admin'))
-
-        # Add new item to admin cart
-        new_admin_cart_item = AdminCart(pet_id=pet_id)
-        db.session.add(new_admin_cart_item)
-        db.session.commit()
-    
-        flash(f"{pet.breed} has been added to your cart!", "success")
-        return redirect(url_for('view_admin_cart'))
-
-    except Exception as e:
-        print(f"Error adding to admin cart: {e}")
-        return "Error adding item to cart", 500
-
-@app.route('/admin/delete_from_cart/<int:cart_item_id>', methods=['POST'])
-def delete_from_admin_cart(cart_item_id):
-    cart_item = db.session.query(AdminCart).filter_by(id=cart_item_id).first()
-    if cart_item:
-        db.session.delete(cart_item)
-        db.session.commit()
-    return redirect(url_for('view_admin_cart'))
 
 @app.route('/admin_policy', methods=['GET', 'POST'])
 def admin_policy():
@@ -3071,6 +3021,252 @@ def trainer_book():
     # cart_item_ids = [item.service_provider_id for item in Cart.query.all()]
     
     return render_template('trainer_book.html', service=service, provider=provider)
+
+#
+
+def fetch_revenue_data(group_by):
+    """Fetch revenue data for all sources (Dog Sales, Competitions, Spa Services) aggregated by the specified period."""
+    if group_by == 'quarterly':
+        period_format = """
+            CASE
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 1 AND 3 THEN strftime('%Y', sale_date) || '-Q1'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 4 AND 6 THEN strftime('%Y', sale_date) || '-Q2'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 7 AND 9 THEN strftime('%Y', sale_date) || '-Q3'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 10 AND 12 THEN strftime('%Y', sale_date) || '-Q4'
+            END
+        """
+    else:
+        period_format = {
+            'yearly': "strftime('%Y', sale_date)",
+            'monthly': "strftime('%Y-%m', sale_date)"
+        }[group_by]
+
+    sales_query = text(f"""
+        SELECT SUM(sale_price) AS total_sales_revenue, {period_format} AS period
+        FROM sales GROUP BY period ORDER BY period DESC
+    """)
+    competition_query = text(f"""
+        SELECT SUM(amount) AS total_competition_revenue, {period_format.replace('sale_date', 'payment_date')} AS period
+        FROM payment GROUP BY period ORDER BY period DESC
+    """)
+    spa_query = text(f"""
+        SELECT SUM(total_amount) AS total_spa_revenue, {period_format.replace('sale_date', 'order_date')} AS period
+        FROM orders GROUP BY period ORDER BY period DESC
+    """)
+
+    sales_data = db.session.execute(sales_query).fetchall()
+    competition_data = db.session.execute(competition_query).fetchall()
+    spa_data = db.session.execute(spa_query).fetchall()
+
+    sales_df = pd.DataFrame(sales_data, columns=['total_sales_revenue', 'period'])
+    competition_df = pd.DataFrame(competition_data, columns=['total_competition_revenue', 'period'])
+    spa_df = pd.DataFrame(spa_data, columns=['total_spa_revenue', 'period'])
+
+    merged_df = pd.merge(sales_df, competition_df, on='period', how='outer')
+    merged_df = pd.merge(merged_df, spa_df, on='period', how='outer')
+
+    merged_df['total_sales_revenue'] = pd.to_numeric(merged_df['total_sales_revenue'], errors='coerce').fillna(0)
+    merged_df['total_competition_revenue'] = pd.to_numeric(merged_df['total_competition_revenue'], errors='coerce').fillna(0)
+    merged_df['total_spa_revenue'] = pd.to_numeric(merged_df['total_spa_revenue'], errors='coerce').fillna(0)
+
+    return merged_df
+
+def fetch_individual_revenue(timeframe):
+    """Fetch total revenue data for each individual source based on the selected timeframe."""
+    period_format = {
+        'yearly': "strftime('%Y', sale_date)",
+        'monthly': "strftime('%Y-%m', sale_date)",
+        'quarterly': """
+            CASE
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 1 AND 3 THEN strftime('%Y', sale_date) || '-Q1'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 4 AND 6 THEN strftime('%Y', sale_date) || '-Q2'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 7 AND 9 THEN strftime('%Y', sale_date) || '-Q3'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 10 AND 12 THEN strftime('%Y', sale_date) || '-Q4'
+            END
+        """
+    }[timeframe]
+
+    sales_query = text(f""" SELECT SUM(sale_price) FROM sales 
+        WHERE {period_format} = (SELECT {period_format} FROM sales ORDER BY sale_date DESC LIMIT 1)""")
+    
+    competition_query = text(f"""   SELECT SUM(amount) FROM payment 
+        WHERE {period_format.replace('sale_date', 'payment_date')} =
+          (SELECT {period_format.replace('sale_date', 'payment_date')} FROM payment ORDER BY payment_date DESC LIMIT 1)""")
+    
+    spa_query = text(f"""
+        SELECT SUM(total_amount) FROM orders WHERE {period_format.replace('sale_date', 'order_date')} = 
+        (SELECT {period_format.replace('sale_date', 'order_date')} FROM orders ORDER BY order_date DESC LIMIT 1)""")
+
+    sales_total = db.session.execute(sales_query).scalar() or 0
+    competition_total = db.session.execute(competition_query).scalar() or 0
+    spa_total = db.session.execute(spa_query).scalar() or 0
+
+    return {'sales_total': sales_total, 'competition_total': competition_total, 'spa_total': spa_total}
+
+def calculate_growth_rate(df):
+    """Calculate the growth rate over time."""
+    df['period'] = pd.to_datetime(df['period'], errors='coerce')
+    df.dropna(subset=['period'], inplace=True)
+    df.sort_values('period', inplace=True)
+
+    # Calculate the total revenue over time
+    df['total_revenue'] = df['total_sales_revenue'] + df['total_competition_revenue'] + df['total_spa_revenue']
+
+    # Calculate percentage change in total revenue (growth rate)
+    df['growth_rate'] = df['total_revenue'].pct_change() * 100
+
+    return df
+
+
+def fetch_dog_sales_over_time(group_by):
+    """Fetch sales data grouped by time periods for all breeds."""
+    if group_by == 'quarterly':
+        period_format = """
+            CASE
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 1 AND 3 THEN strftime('%Y', sale_date) || '-Q1'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 4 AND 6 THEN strftime('%Y', sale_date) || '-Q2'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 7 AND 9 THEN strftime('%Y', sale_date) || '-Q3'
+                WHEN CAST(strftime('%m', sale_date) AS INTEGER) BETWEEN 10 AND 12 THEN strftime('%Y', sale_date) || '-Q4'
+            END
+        """
+    else:
+        period_format = {
+            'yearly': "strftime('%Y', sale_date)",
+            'monthly': "strftime('%Y-%m', sale_date)"
+        }[group_by]
+
+    query = text(f"""
+        SELECT {period_format} AS period, Dog_sales.breed, SUM(Dog_sales.quantity * Dog_sales.price) AS total_revenue
+        FROM Dog_sales
+        JOIN sale_detail ON Dog_sales.breed_id = sale_detail.dog_id
+        JOIN Sales ON sale_detail.sale_id = Sales.sale_id
+        GROUP BY period, Dog_sales.breed
+        ORDER BY period DESC, total_revenue DESC
+    """)
+    result = db.session.execute(query).fetchall()
+    return pd.DataFrame(result, columns=['period', 'breed', 'total_revenue'])
+
+def fetch_trainer_revenue(group_by):
+    """Fetch revenue for each trainer grouped by week, month, or year."""
+    if group_by == 'quarterly':
+        period_format = """
+        CASE
+            WHEN CAST(strftime('%m', booking_date) AS INTEGER) BETWEEN 1 AND 3 THEN strftime('%Y', booking_date) || '-Q1'
+            WHEN CAST(strftime('%m', booking_date) AS INTEGER) BETWEEN 4 AND 6 THEN strftime('%Y', booking_date) || '-Q2'
+            WHEN CAST(strftime('%m', booking_date) AS INTEGER) BETWEEN 7 AND 9 THEN strftime('%Y', booking_date) || '-Q3'
+            WHEN CAST(strftime('%m', booking_date) AS INTEGER) BETWEEN 10 AND 12 THEN strftime('%Y', booking_date) || '-Q4'
+        END
+        """
+    else:
+        period_format = {
+            'yearly': "strftime('%Y', booking_date)",
+            'monthly': "strftime('%Y-%m', booking_date)"
+        }[group_by]
+
+
+    query = text(f"""
+        SELECT {period_format} AS period, service_provider.name, SUM(cost) AS total_revenue
+        FROM service_provider
+        JOIN booking ON service_provider.service_provider_id = booking.provider_id
+        GROUP BY period, service_provider.name
+        ORDER BY period DESC, total_revenue DESC
+    """)
+
+    result = db.session.execute(query).fetchall()
+    return pd.DataFrame(result, columns=['period', 'trainer_name', 'total_revenue'])
+
+
+@app.route('/admin_ana', methods=['GET'])
+def admin_ana():
+    timeframe_chart1 = request.args.get('timeframe_chart1', 'monthly')
+    timeframe_chart2 = request.args.get('timeframe_chart2', 'monthly')
+    timeframe_chart3 = request.args.get('timeframe_chart3', 'monthly')
+    timeframe_chart4 = request.args.get('timeframe_chart4', 'monthly')
+    timeframe_chart5 = request.args.get('timeframe_chart5', 'monthly')  # Default timeframe is 'monthly'
+
+    merged_df_chart1 = fetch_revenue_data(timeframe_chart1)
+    revenue_data_chart2 = fetch_individual_revenue(timeframe_chart2)
+    growth_df_chart3 = calculate_growth_rate(fetch_revenue_data(timeframe_chart3))
+    sales_over_time_df_chart4= fetch_dog_sales_over_time(timeframe_chart4)
+    trainer_revenue_df_chart5 = fetch_trainer_revenue(timeframe_chart5)
+
+    
+    # Total Revenue by Source 
+    total_revenue_fig_chart1 = px.bar(
+        merged_df_chart1,
+        x='period',
+        y=['total_sales_revenue', 'total_competition_revenue', 'total_spa_revenue'],
+        title=f'Total Revenue by Source ({timeframe_chart1.capitalize()})',
+        labels={'period': 'Time Period', 'value': 'Revenue', 'variable': 'Revenue Source'},
+        barmode='group'
+    )
+    total_revenue_graph_html_chart1 = pio.to_html(total_revenue_fig_chart1, full_html=False)
+
+    # Revenue Distribution by Source 
+    revenue_df_chart2 = pd.DataFrame({
+        'source': ['Sales', 'Competitions', 'Spa'],
+        'total_revenue': [
+            revenue_data_chart2['sales_total'],
+            revenue_data_chart2['competition_total'],
+            revenue_data_chart2['spa_total']
+        ]
+    })
+    pie_chart_fig_chart2 = px.pie(
+        revenue_df_chart2,
+        names='source',
+        values='total_revenue',
+        title=f'Revenue Distribution by Source ({timeframe_chart2.capitalize()})'
+    )
+    pie_chart_graph_html_chart2 = pio.to_html(pie_chart_fig_chart2, full_html=False)
+
+    # Revenue Growth Rate Over Time 
+    growth_rate_fig_chart3 = px.line(
+        growth_df_chart3,
+        x='period',
+        y='growth_rate',
+        title=f'Revenue Growth Rate Over Time ({timeframe_chart3.capitalize()})',
+        labels={'period': 'Time Period', 'growth_rate': 'Growth Rate (%)'},
+        markers=True
+    )
+    growth_rate_graph_html_chart3 = pio.to_html(growth_rate_fig_chart3, full_html=False)
+
+    # Dog Sales Comparison by Revenue 
+    sales_over_time_fig = px.bar(
+        sales_over_time_df_chart4,
+        x='period',
+        y='total_revenue',
+        color='breed',
+        title=f'Sales Over Time ({timeframe_chart4.capitalize()})',
+        labels={'period': 'Time Period', 'total_revenue': 'Total Revenue', 'breed': 'Breed'},
+         barmode='group'
+      
+    )
+    sales_over_time_graph_html = pio.to_html(sales_over_time_fig, full_html=False)
+    # Trainer Revenue by Time
+    trainer_revenue_fig_chart5 = px.bar(
+        trainer_revenue_df_chart5,
+        x='period',
+        y='total_revenue',
+        color='trainer_name',
+        title=f'Trainer Revenue Over Time ({timeframe_chart5.capitalize()})',
+        labels={'period': 'Time Period', 'total_revenue': 'Total Revenue', 'trainer_name': 'Trainer'},
+        barmode='group'
+    )
+    trainer_revenue_graph_html_chart5 = pio.to_html(trainer_revenue_fig_chart5, full_html=False)
+
+    return render_template(
+        'admin_ana.html',
+        total_revenue_graph_html=total_revenue_graph_html_chart1,
+        pie_chart_graph_html=pie_chart_graph_html_chart2,
+        growth_rate_graph_html=growth_rate_graph_html_chart3,
+        sales_over_time_graph_html=sales_over_time_graph_html,
+        trainer_revenue_graph_html=trainer_revenue_graph_html_chart5,
+        timeframe_chart1=timeframe_chart1,
+        timeframe_chart2=timeframe_chart2,
+        timeframe_chart3=timeframe_chart3,
+        timeframe_chart4=timeframe_chart4,
+        timeframe_chart5=timeframe_chart5
+    )
 
 
 if __name__ == '__main__':
