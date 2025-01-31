@@ -1,7 +1,7 @@
 import re
 import uuid 
 import time
-from flask import send_from_directory
+from flask import send_from_directory, abort
 from flask import Flask, flash, redirect, render_template, request, jsonify, session, url_for, session as flask_session
 from flask import abort
 from flask_sqlalchemy import SQLAlchemy
@@ -10,15 +10,19 @@ from flask_migrate import Migrate
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 import random
+import sqlite3
 import os
 from bcrypt import checkpw
 from flask import Flask, render_template, request, redirect, flash, url_for, session, send_from_directory
-import sendgrid
-# from sendgrid.helpers.mail import Mail, Email, To, Content
+#import sendgrid
+#from sendgrid.helpers.mail import Mail, Email, To, Content
 from datetime import date
-from PIL import Image
+#from PIL import Image
 from werkzeug.security import generate_password_hash
 from sqlalchemy import MetaData
+from sqlalchemy.exc import OperationalError
+from flask import send_from_directory, abort
+from werkzeug.utils import safe_join 
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -41,10 +45,11 @@ migrate = Migrate(app, db)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'chakkasatwika225@gmail.com'
-app.config['MAIL_PASSWORD'] = 'sqer mjwd rkah ynll'
+app.config['MAIL_USERNAME'] = 'jasnavig9@gmail.com'
+app.config['MAIL_PASSWORD'] = 'guze fwag qsff hppm'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@gmail.com'
 notif_mail = Mail(app)
+mail=Mail(app)
 
 
 # Database Model
@@ -335,11 +340,41 @@ class Final_Cart(db.Model):
         self.booking_date = booking_date
         self.booking_time = booking_time
 
+    
+@app.route('/get-service-providers', methods=['GET'])
+def get_service_providers():
+    try:
+        service_providers = User.query.filter_by(role='service-provider').all()
+        providers_list = [
+            {
+                'id': sp.id,  # Ensure ID is included
+                'fullname': sp.fullname,
+                'email': sp.email,
+                'service_type': sp.service_type,
+                'location': sp.location,
+                'hourly_rate': sp.hourly_rate,
+                'certifications': sp.certifications,
+                'experience': sp.experience,
+                'id_proof_path': sp.id_proof_path,
+                'qualification_path': sp.qualification_path,
+            }
+            for sp in service_providers
+        ]
+        return jsonify({'status': 'success', 'data': providers_list})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/admin-dashboard')
+def admin_page():  # Rename function to avoid conflict
+    service_providers = User.query.filter_by(role='service-provider').all()
+    return render_template('admin_dashboard.html', service_providers=service_providers)
 # Temporary OTP Store
 otp_store = {}
 
 # Configurations
-app.config['UPLOAD_FOLDER'] = 'uploads/'
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))  # Get the base directory of the Flask app
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads') 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'jpg', 'jpeg', 'png'}
 
 
@@ -353,33 +388,82 @@ def allowed_file(filename):
 
 
 # Routes
-
-# Serve uploaded files from the 'uploads' folder
-@app.route('/uploads/<filename>')
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    try:
+        db.session.remove()
+    except OperationalError:
+        pass
+@app.route('/uploads/<path:filename>')  # Use <path:filename> to allow spaces
 def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    try:
+        safe_path = safe_join(app.config['UPLOAD_FOLDER'], filename)
+
+        # Check if the file exists
+        if not os.path.exists(safe_path):
+            return "File Not Found", 404
+
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    except Exception as e:
+        print(f"Error: {e}")
+        return abort(500)
 
 @app.route('/show-users')
 def display_users():
     show_users()
     return "User data has been printed in the console."
 
-
-@app.route('/delete_submission/<int:index>', methods=['GET'])
+@app.route('/delete_submission/<int:index>', methods=['POST'])
 def delete_submission(index):
+    # Debugging: Check if the function is being called
+    print(f"Deleting submission at index: {index}")
+
     # Get the list of submissions from the session
     submissions = session.get('submissions', [])
+    print(f"Current submissions: {submissions}")  # Debugging: Check submissions
 
     # Ensure the index is valid
     if 0 <= index < len(submissions):
         # Remove the submission from the list
         submissions.pop(index)
+        # Debugging: Print updated submissions
+        print(f"Updated submissions: {submissions}")
 
         # Update the session with the modified submissions list
         session['submissions'] = submissions
+    else:
+        print("Invalid index")
 
     # Redirect back to the admin dashboard
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/delete_fromservice_providertable/<int:user_id>', methods=['DELETE'])
+def delete_fromservice_providertable(user_id):
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'status': 'error', 'message': 'User not found'}), 404
+
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'User deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+@app.route('/delete_service_provider/<int:id>', methods=['GET'])
+def delete_service_provider(id):
+    # Assuming `service_providers` is your data source (list or DB)
+    global service_providers
+    provider = next((p for p in service_providers if p['id'] == id), None)
+    
+    if provider:
+        service_providers = [p for p in service_providers if p['id'] != id]  # Remove the provider
+        return jsonify({'message': 'Service provider deleted successfully'})
+    else:
+        return jsonify({'error': 'Service provider not found'}), 404
+    
 
 @app.before_request
 def ensure_fresh_session():
@@ -396,19 +480,23 @@ def home():
     if not session.get('role'):
         return render_template('landing_page.html', user_name=None)
 
+    # Check if the user is logged in as a service provider
+    if session.get('role') == 'service-provider':
+        if 'user_id' in session:
+            return redirect(url_for('service_provider_landing'))
+        else:
+            session.clear()
+            return redirect(url_for('login'))
+
     # Check if the user is logged in as a customer
-    if session['role'] == 'customer':
+    if session.get('role') == 'customer':
         user_name = session.get('fullname', 'Guest')
         return render_template('landing_page.html', user_name=user_name)
-
-    # Check if the user is logged in as a service provider
-    if session['role'] == 'service-provider':
-        return redirect(url_for('service_provider_landing'))
 
     # Fallback for unexpected roles
     session.clear()
     return render_template('landing_page.html', user_name=None)
-
+   
 
 
    
@@ -514,8 +602,6 @@ def submit_application():
     # Redirect to home page after submission
     return redirect(url_for('home'))
 
-
-
 def save_file_default(file):
     """Save files to the default 'uploads/' folder."""
     if file:
@@ -524,7 +610,6 @@ def save_file_default(file):
         file.save(file_path)
         return filename
     return None
-
 
 
 
@@ -542,7 +627,7 @@ def register():
         return render_template('index.html')  # Render the register page for GET requests
 
     # Handle POST request logic for registration
-    data = request.get_json()
+    data = request.form
 
     # Validate common fields
     required_fields = ['fullname', 'email', 'password', 'role']
@@ -558,15 +643,28 @@ def register():
         return jsonify({"error": "Invalid email address. Please use a valid format like name@example.com."}), 400
 
     # Role-based handling
-    role = data['role']
-    new_user = None
+    role = data.get('role')
 
     if role == 'service-provider':
         # Validate service provider fields
-        service_fields = ['service_type', 'location', 'hourly_rate', 'certifications', 'experience']
+        service_fields = ['service_type', 'location', 'hourly_rate', 'experience']
         for field in service_fields:
             if not data.get(field):
                 return jsonify({"error": f"{field} is required for service providers"}), 400
+
+        # File handling
+        def save_file(file):
+            if file and allowed_file(file.filename):
+                filename = f"{uuid.uuid4()}_{file.filename}"
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))  # Save file in the uploads folder
+                return filename  # Store only the filename in the database
+            return None
+
+        id_proof_path = save_file(request.files.get('id-proof'))
+        qualification_path = save_file(request.files.get('qualification'))
+
+        if not id_proof_path or not qualification_path:
+            return jsonify({"error": "All required documents must be uploaded"}), 400
 
         # Create a new service provider user
         new_user = User(
@@ -577,11 +675,10 @@ def register():
             service_type=data['service_type'],
             location=data['location'],
             hourly_rate=float(data['hourly_rate']),
-            certifications=data['certifications'],
+            certifications=data.get('certifications', ''),
             experience=int(data['experience']),
-            id_proof_path=data.get('id_proof_path'),
-            qualification_path=data.get('qualification_path'),
-            certification_path=data.get('certifications_path')
+            id_proof_path=id_proof_path,
+            qualification_path=qualification_path
         )
     elif role == 'customer':
         # Create a new customer user
@@ -594,29 +691,29 @@ def register():
     else:
         return jsonify({"error": "Invalid role"}), 400
 
-    # Simulate OTP sending (replace with actual logic if needed)
+    # Save the user to the database
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({"message": "Registration successful", "role": role, "fullname": data['fullname']}), 201
+
+
 
     otp = "123456"  # Simulated OTP
 
-
-
-    # Response
+    # Prepare response data
     response_data = {
-    "fullname": data['fullname'],
-    "email": data['email'],
-    "role": data['role']
-     }
+        "fullname": data['fullname'],
+        "email": data['email'],
+        "role": data['role']
+    }
 
+    # Response with OTP
     return jsonify({
-
         "message": "Registration successful. OTP sent to your registered contact.",
-
         "otp": otp,
-
         "data": response_data
-
     })
-
 
 # Route to Send OTP for Registration
 @app.route('/send-otp', methods=['POST'])
@@ -634,8 +731,7 @@ def send_otp():
     try:
         msg = Message('Your PetCare OTP', sender=app.config['MAIL_USERNAME'], recipients=[email])
         msg.body = f"Your OTP for registration is: {otp}"
-        notif_mail.send(msg)
-        
+        mail.send(msg)
         return jsonify({'status': 'success', 'message': 'OTP sent to your email.'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Failed to send OTP: {str(e)}'}), 500
@@ -643,50 +739,88 @@ def send_otp():
 # Route to Verify OTP and Register User
 @app.route('/verify-otp', methods=['POST'])
 def verify_otp():
-    data = request.get_json()
+    data = request.form  
     email = session.get('temp_email')
     entered_otp = data['otp']
-    password = data['password']
     fullname = data['fullname']
-    role=data['role']
-    
+    role = data['role']
 
     if not email or email not in otp_store:
         return jsonify({'status': 'error', 'message': 'No OTP sent for this email.'}), 400
 
     if otp_store[email] != entered_otp:
         return jsonify({'status': 'error', 'message': 'Invalid OTP.'}), 400
+    
+    print("Received Files:", request.files)  # DEBUGGING
+
+    # File handling
+    def save_file(file):
+        if file and allowed_file(file.filename):
+            filename = f"{uuid.uuid4()}_{file.filename}"
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            try:
+                file.save(file_path)
+                print(f"File saved at: {file_path}")  # DEBUGGING
+                return filename
+            except Exception as e:
+                print(f"File save error: {e}")  # DEBUGGING
+                return None
+        print("Invalid file or not provided")  # DEBUGGING
+        return None
+
+    id_proof_path = save_file(request.files.get('id-proof'))
+    qualification_path = save_file(request.files.get('qualification'))
+
+    print(f"ID Proof Path: {id_proof_path}, Qualification Path: {qualification_path}")  # DEBUGGING
 
     try:
-        #print("Hello world")
-        #print(role)
-        #print("Hello worls")
-        if role=="customer":
-            new_user = User(fullname=fullname, email=email, password=password,role=role)
-           
-        elif role=='service-provider':
-       
-            service_type=data['service_type']
-            location=data['location']
-            hourly_rate=float(data['hourly_rate'])
-            certifications=data['certifications']
-            experience=int(data['experience'])
-            #print(service_type, location, hourly_rate,certifications,experience)
-            new_user = User(fullname=fullname, email=email, password=password,role=role,service_type=service_type,location=location,hourly_rate=hourly_rate,certifications=certifications,experience=experience)
-            
+        if role == 'customer':
+            new_user = User(fullname=fullname, email=email, password=data['password'], role=role)
+        elif role == 'service-provider':
+            new_user = User(
+                fullname=fullname,
+                email=email,
+                password=data['password'],
+                role=role,
+                service_type=data['service_type'],
+                location=data['location'],
+                hourly_rate=float(data['hourly_rate']),
+                certifications=data['certifications'],
+                experience=int(data['experience']),
+                id_proof_path=id_proof_path,
+                qualification_path=qualification_path
+            )
+        
         db.session.add(new_user)
         db.session.commit()
         del otp_store[email]
         session.pop('temp_email', None)
 
-        # Send Registration Success Email
-        msg = Message('Registration Successful - PetCare', sender=app.config['MAIL_USERNAME'], recipients=[email])
-        msg.body = f"Hello {fullname},\n\nYour registration with PetCare was successful. Welcome to our platform!\n\nThank you,\nPetCare Team"
-        notif_mail.send(msg)
-
-        return jsonify({'status': 'success', 'message': 'Registration successful! A confirmation email has been sent.'})
+        if role == 'customer':
+            return jsonify({'status': 'success', 'message': 'Registration successful!'})
+        elif role == 'service-provider':
+            return jsonify({'status': 'success', 'message': 'Documents uploaded. Wait for admin approval.'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Registration failed: {str(e)}'}), 500
+
+@app.route('/send-registration-email', methods=['POST'])
+def send_registration_email():
+    data = request.get_json()
+    fullname = data['fullname']
+    email = data['email']
+
+    try:
+        msg = Message(
+            'Registration Successful - PetCare',
+            sender=app.config['MAIL_USERNAME'],
+            recipients=[email],
+        )
+        msg.body = f"Hello {fullname},\n\nYour registration with PetCare was successful. Welcome to our platform!\n\nThank you,\nPetCare Team"
+        mail.send(msg)
+        return jsonify({'status': 'success', 'message': 'Registration email sent.'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'Failed to send email: {str(e)}'}), 500
+
 
 # Admin Route to Approve Users
 @app.route('/admin/approve-user/<int:user_id>', methods=['POST'])
@@ -698,7 +832,7 @@ def approve_user(user_id):
     try:
         msg = Message('Registration Approved - PetCare', sender=app.config['MAIL_USERNAME'], recipients=[user.email])
         msg.body = f"Hello {user.fullname},\n\nYour registration with PetCare has been approved. You can now log in to access our services.\n\nThank you,\nPetCare Team"
-        notif_mail.send(msg)
+        mail.send(msg)
 
         return jsonify({'status': 'success', 'message': 'User approved and notified via email.'})
     except Exception as e:
@@ -714,7 +848,7 @@ def deny_user(user_id):
     try:
         msg = Message('Registration Denied - PetCare', sender=app.config['MAIL_USERNAME'], recipients=[user.email])
         msg.body = f"Hello {user.fullname},\n\nWe regret to inform you that your registration with PetCare has been denied. If you believe this is an error, please contact our support team.\n\nThank you,\nPetCare Team"
-        notif_mail.send(msg)
+        mail.send(msg)
 
         db.session.delete(user)
         db.session.commit()
@@ -723,12 +857,7 @@ def deny_user(user_id):
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'Failed to send denial email: {str(e)}'}), 500
     # Configure upload folder and allowed extensions
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Ensure the upload folder exists
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -787,6 +916,7 @@ def upload_file():
 
 # Other Routes (Login, Password Reset, etc.) remain unchanged
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
@@ -843,20 +973,43 @@ app.config['NOTIF_MAIL_PASSWORD'] = 'ectf zfsn anxi nmox'          # Replace wit
 
 # Initialize a separate Mail instance
 notif_mail = Mail()
+notif_mail.init_app(app)
 
+def generate_password(length=8):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for i in range(length))
 
 @app.route('/send_notification_email', methods=['POST'])
 def send_notification_email():
     data = request.json
     email = data['email']
     action = data['action']
-    
+    password = data.get('password', None)  # Get password if provided (for accepted requests)
+    user = User.query.filter_by(email=email).first()
+    if user:
+        user.password = password  # Store hashed password
+        db.session.commit()
+    else:
+        return jsonify({"error": "User not found"}), 404
     subject = "Application Status Notification"
+    
     if action == "accept":
-        body = f"Dear {data['full_name']},\n\nYour application for the service '{data['service_requested']}' has been accepted.\n\nThank you!"
-    elif action == "reject":
-        body = f"Dear {data['full_name']},\n\nWe regret to inform you that your application for the service '{data['service_requested']}' has been rejected.\n\nThank you!"
+        body = f"""Dear {data['full_name']},
 
+Your application for the service '{data['service_requested']}' has been accepted.
+Your username is your email: {email}
+Your password is: {password}
+
+Thank you!
+"""
+    elif action == "reject":
+        body = f"""Dear {data['full_name']},
+
+We regret to inform you that your application for the service '{data['service_requested']}' has been rejected.
+
+Thank you!
+"""
+    
     try:
         msg = Message(subject, sender=app.config['NOTIF_MAIL_USERNAME'], recipients=[email])
         msg.body = body
@@ -864,7 +1017,7 @@ def send_notification_email():
         return jsonify({"message": "Notification email sent successfully"}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to send email: {str(e)}"}), 500
-    
+
     
     
 # Query all users from the database
