@@ -25,9 +25,7 @@
           <li class="nav-item">
             <a class="nav-link" href="{{url_for('admin')}}">Dog</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('view_admin_cart') }}">Cart</a>
-          </li>
+          
           <li class="nav-item">
             <a href="{{url_for('add_dog')}}" class="btn btn-success">Add New Dog</a>
           </li>
@@ -86,48 +84,41 @@
   <!-- Main Content -->
   <main class="container">
     <aside class="filters">
-      <h2>Filters</h2>
-      <form method="GET" action="{{ url_for('admin') }}">
+    <h2>Filters</h2>
+    <form method="GET" action="{{ url_for('admin') }}">
         <!-- Breed Filter -->
-        <label for="breed">Breed</label>
-        <select id="breed" name="breed">
-          <option value="">All</option>
-          <option value="Golden Retriever" {% if breed == "Golden Retriever" %}selected{% endif %}>Golden Retriever</option>
-          <option value="Labrador" {% if breed == "Labrador" %}selected{% endif %}>Labrador</option>
-          <option value="Beagle" {% if breed == "Beagle" %}selected{% endif %}>Beagle</option>
-          <option value="Poodle" {% if breed == "Poodle" %}selected{% endif %}>Poodle</option>
-          <option value="German Shepherd" {% if breed == "German Shepherd" %}selected{% endif %}>German Shepherd</option>
-          <option value="Bulldog" {% if breed == "Bulldog" %}selected{% endif %}>Bulldog</option>
-          <option value="Dobermann" {% if breed == "Dobermann" %}selected{% endif %}>Dobermann</option>
-          <option value="Rottweiler" {% if breed == "Rottweiler" %}selected{% endif %}>Rottweiler</option>
-      
-        </select>
+<label for="breed">Breed</label>
+<select id="breed" name="breed">
+  <option value="">All</option>
+  {% for b in breed_options %}
+<option value="{{ b }}" {% if breed == b %}selected{% endif %}>{{ b }}</option>
+{% endfor %}
 
+</select>
         <!-- Age Filter -->
         <label for="age">Age</label>
         <select id="age" name="age">
-          <option value="">All</option>
-          <option value="Puppy" {% if age == "Puppy" %}selected{% endif %}>Puppy (0-1 year)</option>
-          <option value="Young" {% if age == "Young" %}selected{% endif %}>Young (1-3 years)</option>
-          <option value="Adult" {% if age == "Adult" %}selected{% endif %}>Adult (3+ years)</option>
+            <option value="">All</option>
+            <option value="Puppy" {% if age_filter == "Puppy" %}selected{% endif %}>Puppy (0-1 year)</option>
+            <option value="Young" {% if age_filter == "Young" %}selected{% endif %}>Young (1-3 years)</option>
+            <option value="Adult" {% if age_filter == "Adult" %}selected{% endif %}>Adult (3+ years)</option>
         </select>
 
-        <!-- Price Filter -->
         <label for="price">Price</label>
-        <select id="price" name="price">
-          <option value="">All</option>
-          <option value="low" {% if price == "low" %}selected{% endif %}>Below ₹6000</option>
-          <option value="medium" {% if price == "medium" %}selected{% endif %}>₹6000-₹10000</option>
-          <option value="high" {% if price == "high" %}selected{% endif %}>₹10000-₹15000</option>
-          <option value="very_high" {% if price == "very_high" %}selected{% endif %}>Above ₹15000</option>
-       </select>
+<select id="price" name="price">
+    <option value="" {% if not price %}selected{% endif %}>All</option>
+    <option value="low" {% if price == "low" %}selected{% endif %}>Low ( &lt; 6000)</option>
+    <option value="medium" {% if price == "medium" %}selected{% endif %}>Medium (6000-10000)</option>
+    <option value="high" {% if price == "high" %}selected{% endif %}>High (10000-15000)</option>
+    <option value="very high" {% if price == "very high" %}selected{% endif %}>Very High (&gt;15000)</option>
+</select>
 
+        
+        
+        
         <button type="submit" class="apply-filters">Apply Filters</button>
-      </form>
-    </aside>
-
-
-
+    </form>
+</aside>
     <section class="dog-cards">
       {% if dogs %}
         {% for dog in dogs %}
@@ -163,9 +154,7 @@
               <p><strong>Age:</strong> {{ dog.age_months }} months</p>
               <p><strong>Description:</strong> {{ dog.description }}</p>
               <p><strong>Price:</strong> ₹{{ dog.price | round }}</p>
-              <form action="{{ url_for('admin_add_to_cart', pet_id=dog.pet_id) }}" method="post">
-                <button type="submit" class="btn btn-primary w-100 mt-3">Add to Cart</button>
-              </form>
+              
               <form action="/edit_dog/{{ dog.pet_id }}" method="POST">
                 <button type="submit" class="btn btn-primary w-100 mt-3">Edit</button>
               </form>

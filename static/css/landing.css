@@ -90,28 +90,52 @@ header h1 {
     display: block;
 }
 
+/* ... (rest of your CSS) ... */
+
 .switch-button {
     position: absolute;
     top: 10px;
     right: 20px;
 }
 
-.switch-button button {
-    background-color: #ffeb3b;
-    color: #1e90ff;
+
+.switch-button-link.yellow { /* Style the <a> tag like a button, yellow version */
+    display: inline-block;
+    background-color: #ffeb3b; /* Yellow background */
+    color: #1e90ff; /* Blue text (or any color you prefer) */
     font-size: 1em;
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, color 0.3s, transform 0.2s, box-shadow 0.2s;
     font-weight: bold;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    text-decoration: none;
+    outline: none;
 }
 
-.switch-button button:hover {
-    background-color: #b19a60;
+.switch-button-link.yellow:hover {
+    background-color: #b19a60; /* Darker yellow on hover */
+    color: #1e90ff;
+    transform: translateY(-2px);
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
 }
 
+.switch-button-link.yellow:active {
+    background-color: #99803b; /* Even darker yellow on click */
+    transform: translateY(0);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+
+.switch-button-link:disabled {
+    background-color: #ccc;
+    color: #999;
+    cursor: default;
+    transform: none;
+    box-shadow: none;
+}
 .hero {
     position: relative;
     width: 100%;
