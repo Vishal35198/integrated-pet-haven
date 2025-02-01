@@ -21,7 +21,6 @@ from datetime import date
 #from PIL import Image
 from werkzeug.security import generate_password_hash
 from sqlalchemy import MetaData
-<<<<<<< HEAD
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy import MetaData
@@ -31,11 +30,9 @@ from flask_sqlalchemy import SQLAlchemy
 import plotly.io as pio
 from sqlalchemy.sql import text
 
-=======
 from sqlalchemy.exc import OperationalError
 from flask import send_from_directory, abort
 from werkzeug.utils import safe_join 
->>>>>>> d3f1598062ec30c590a52a81021cc3f3f066e203
 convention = {
     "ix": 'ix_%(column_0_label)s',
     "uq": "uq_%(table_name)s_%(column_0_name)s",
