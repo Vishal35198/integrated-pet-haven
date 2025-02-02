@@ -2861,14 +2861,49 @@ def admin_services():
     services = Service.query.all()
     return render_template('admin_services.html', services=services)
 
+
 @app.route('/admin_trainer')
 def admin_trainer():
     services = Service.query.all()
     trainers = Service_Provider.query.all()
+    edit_requests = EditRequest.query.order_by(EditRequest.created_at.desc()).all()
+    pending_count = EditRequest.query.filter_by(status='pending').count()
     service_list = [{'id': s.id, 'name': s.title} for s in services]
-    # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
-    return render_template('admin_trainer.html', services=services,trainers = trainers,service_list=service_list)
+    
+    return render_template('admin_trainer.html', 
+                         services=services,
+                         trainers=trainers,
+                         service_list=service_list,
+                         edit_requests=edit_requests,
+                         pending_count=pending_count)
 
+@app.route('/edit_request/<int:request_id>/update_status', methods=['POST'])
+def update_request_status(request_id):
+    edit_request = EditRequest.query.get_or_404(request_id)
+    status = request.form.get('status')
+    if status in ['approved', 'rejected']:
+        edit_request.status = status
+        db.session.commit()
+        flash(f'Request has been {status}', 'success')
+    return redirect(url_for('admin_trainer'))
+
+@app.route('/edit_request/<int:request_id>/delete', methods=['POST'])
+def delete_request(request_id):
+    edit_request = EditRequest.query.get_or_404(request_id)
+    
+    # Delete associated files
+    if edit_request.certifications:
+        for file_path in edit_request.certifications.split(','):
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                flash(f'Error deleting file: {str(e)}', 'warning')
+    
+    db.session.delete(edit_request)
+    db.session.commit()
+    flash('Request has been deleted', 'success')
+    return redirect(url_for('admin_trainer'))
 @app.route('/static/images/admin_trainer/<int:trainer_id>')
 def admin_trainer_image(trainer_id):
     return f"static/images/trainer/{trainer_id}.jpg"

@@ -588,6 +588,112 @@
           <a href="#services-provided" class="btn btn-primary btn-lg view_services">View Trainer</a>
         </div>
       </div>
+      
+<div class="container mt-4">
+  <div class="row">
+      <div class="col-md-12">
+          <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #ffec9f;">
+                  <h3 class="mb-0">Edit Requests</h3>
+                  {% if pending_count > 0 %}
+                  <span class="badge bg-warning">{{ pending_count }} Pending</span>
+                  {% endif %}
+              </div>
+              <div class="card-body">
+                  {% if edit_requests %}
+                  <div class="table-responsive">
+                      <table class="table table-hover">
+                          <thead>
+                              <tr>
+                                  <th>Date</th>
+                                  <th>Name</th>
+                                  <th>Service Type</th>
+                                  <th>Location</th>
+                                  <th>Rate</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              {% for request in edit_requests %}
+                              <tr class="{{ 'table-warning' if request.status == 'pending' else 'table-success' if request.status == 'approved' else 'table-danger' }}">
+                                  <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                  <td>{{ request.full_name }}</td>
+                                  <td>{{ request.service_type }}</td>
+                                  <td>{{ request.location }}</td>
+                                  <td>₹{{ request.hourly_rate }}</td>
+                                  <td>
+                                      <span class="badge bg-{{ 'warning' if request.status == 'pending' else 'success' if request.status == 'approved' else 'danger' }}">
+                                          {{ request.status }}
+                                      </span>
+                                  </td>
+                                  <td>
+                                      <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal{{ request.id }}">
+                                          View
+                                      </button>
+                                      <form action="{{ url_for('delete_request', request_id=request.id) }}" method="POST" class="d-inline">
+                                          <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this request?')">Delete</button>
+                                      </form>
+                                  </td>
+                              </tr>
+                              
+                              <!-- Modal for each request -->
+                              <div class="modal fade" id="requestModal{{ request.id }}" tabindex="-1">
+                                  <div class="modal-dialog modal-lg">
+                                      <div class="modal-content">
+                                          <div class="modal-header">
+                                              <h5 class="modal-title">Edit Request Details</h5>
+                                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                          </div>
+                                          <div class="modal-body">
+                                              <div class="row">
+                                                  <div class="col-md-6">
+                                                      <p><strong>Name:</strong> {{ request.full_name }}</p>
+                                                      <p><strong>Email:</strong> {{ request.email }}</p>
+                                                      <p><strong>Service Type:</strong> {{ request.service_type }}</p>
+                                                      <p><strong>Location:</strong> {{ request.location }}</p>
+                                                  </div>
+                                                  <div class="col-md-6">
+                                                      <p><strong>Hourly Rate:</strong> ₹{{ request.hourly_rate }}</p>
+                                                      <p><strong>Experience:</strong> {{ request.experience }}</p>
+                                                      <p><strong>Certifications:</strong></p>
+                                                      <ul>
+                                                          {% for cert in request.certifications.split(',') %}
+                                                          <li><a href="{{ cert }}" target="_blank">View Certificate</a></li>
+                                                          {% endfor %}
+                                                      </ul>
+                                                  </div>
+                                              </div>
+                                          </div>
+                                          <div class="modal-footer">
+                                              {% if request.status == 'pending' %}
+                                              <form action="{{ url_for('update_request_status', request_id=request.id) }}" method="POST" class="d-inline">
+                                                  <input type="hidden" name="status" value="approved">
+                                                  <button type="submit" class="btn btn-success">Approve</button>
+                                              </form>
+                                              <form action="{{ url_for('update_request_status', request_id=request.id) }}" method="POST" class="d-inline">
+                                                  <input type="hidden" name="status" value="rejected">
+                                                  <button type="submit" class="btn btn-danger">Reject</button>
+                                              </form>
+                                              {% else %}
+                                              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                              {% endif %}
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                              {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+                  {% else %}
+                  <p class="text-center">No edit requests found.</p>
+                  {% endif %}
+              </div>
+          </div>
+      </div>
+  </div>
+</div>
       <div class="main-content-section container-fluid p-10" style="background-color: #faf0c4;">
         <div class="row" style="background-color: #faf0c4;">
           <div class="col-md-4 left-sidebar">

@@ -17,13 +17,10 @@
         <span class="navbar-brand mb-0 h1"><h2>Cannine Commerce </h2></span>
         <ul class="navbar-nav ms-auto mb-2 mb-lg-0 ">
           <li class="nav-item">
-            <a class="nav-link" href="#">Home</a>
+            <a class="nav-link" href="{{ url_for('admin_landing') }}">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#">Dog</a>
-          </li>
-          <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('view_cart') }}">Cart</a>
+            <a class="nav-link" href="{{ url_for('admin') }}">Dogs</a>
           </li>
         </ul>
       </div>
