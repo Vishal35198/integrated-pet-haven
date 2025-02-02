@@ -28,6 +28,7 @@ import plotly.express as px
 import pandas as pd
 from flask_sqlalchemy import SQLAlchemy
 import plotly.io as pio
+from PIL import Image
 from sqlalchemy.sql import text
 
 from sqlalchemy.exc import OperationalError
@@ -3094,7 +3095,7 @@ def trainer_images(filename):
     return send_from_directory('static/images/trainer', filename)
 
 
-app.config['UPLOAD_FOLDER'] = 'static/certificates'
+# app.config['UPLOAD_FOLDER'] = 'static/certificates'
 app.config['MAX_CONTENT_LENGTH'] = 20* 1024 * 1024  # 5MB max-limit
 ALLOWED_EXTENSIONS = {'pdf'}
 
