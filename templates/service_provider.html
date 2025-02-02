@@ -14,11 +14,11 @@
         </div>
     </header>
     <nav>
-        <a href="service_provider_landing.html">Home</a>
-        <a href="{{url_for('trainer_services')}}">Dog Spa and Management</a>
+        <a href="{{url_for('service_provider_landing')}}">Home</a>
+        <a href="{{url_for('services')}}">Dog Spa and Management</a>
         <div class="user-profile">
             <img src="../image/user_icon.png" alt="User">
-            <span>Bhanvi</span>
+            <span>Welcome,{{ user_name }}</span>
             <div class="dropdown">
                 <a href="#">Profile</a>
                 <a href="#">Logout</a>
