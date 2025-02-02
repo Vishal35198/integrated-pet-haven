@@ -2767,8 +2767,6 @@ def success_page():
     )
 
 
-
-
 def setup_image_handling(app):
     # Configure image upload settings
     UPLOAD_FOLDER = os.path.join('static', 'images')
@@ -2795,6 +2793,9 @@ def setup_image_handling(app):
                 # Create a standardized filename for the trainer image
                 filename = f'trainer{trainer_id}.jpg'
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'trainers', filename)
+                
+                # Ensure the trainers directory exists
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
                 
                 # Open and optimize the image
                 img = Image.open(file)
@@ -2828,6 +2829,9 @@ def setup_image_handling(app):
                 filename = f'service{service_id}.jpg'
                 filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'services', filename)
                 
+                # Ensure the services directory exists
+                os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                
                 # Open and optimize the image
                 img = Image.open(file)
                 # Convert to RGB if necessary
@@ -2855,20 +2859,56 @@ def setup_image_handling(app):
 
 image_handler = setup_image_handling(app)
 app.config['UPLOAD_FOLDER'] = image_handler['UPLOAD_FOLDER']
-
     
 @app.route('/admin_services')
 def admin_services():
     services = Service.query.all()
     return render_template('admin_services.html', services=services)
 
+
 @app.route('/admin_trainer')
 def admin_trainer():
     services = Service.query.all()
     trainers = Service_Provider.query.all()
+    edit_requests = EditRequest.query.order_by(EditRequest.created_at.desc()).all()
+    pending_count = EditRequest.query.filter_by(status='pending').count()
+     # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
     service_list = [{'id': s.id, 'name': s.title} for s in services]
-    # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
-    return render_template('admin_trainer.html', services=services,trainers = trainers,service_list=service_list)
+    
+    return render_template('admin_trainer.html', 
+                         services=services,
+                         trainers=trainers,
+                         service_list=service_list,
+                         edit_requests=edit_requests,
+                         pending_count=pending_count)
+
+@app.route('/edit_request/<int:request_id>/update_status', methods=['POST'])
+def update_request_status(request_id):
+    edit_request = EditRequest.query.get_or_404(request_id)
+    status = request.form.get('status')
+    if status in ['approved', 'rejected']:
+        edit_request.status = status
+        db.session.commit()
+        flash(f'Request has been {status}', 'success')
+    return redirect(url_for('admin_trainer'))
+
+@app.route('/edit_request/<int:request_id>/delete', methods=['POST'])
+def delete_request(request_id):
+    edit_request = EditRequest.query.get_or_404(request_id)
+    
+    # Delete associated files
+    if edit_request.certifications:
+        for file_path in edit_request.certifications.split(','):
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as e:
+                flash(f'Error deleting file: {str(e)}', 'warning')
+    
+    db.session.delete(edit_request)
+    db.session.commit()
+    flash('Request has been deleted', 'success')
+    return redirect(url_for('admin_trainer'))
 
 @app.route('/static/images/admin_trainer/<int:trainer_id>')
 def admin_trainer_image(trainer_id):
@@ -2890,6 +2930,7 @@ def add_service():
         # Create a new service without the image path first to get the service_id
         new_service = Service(
             image='',  # Temporary placeholder
+            age='',  # Temporary placeholder
             alt=alt,
             title=title,
             description=description,
@@ -3046,7 +3087,6 @@ def edit_trainer(service_provider_id):
     cost = request.form['cost']
     service_provided_id = request.form['service_provided_id']
     
-
     # Find the trainer in the database
     trainer = Service_Provider.query.get(service_provider_id)
     if not trainer:
@@ -3061,7 +3101,7 @@ def edit_trainer(service_provider_id):
         trainer.cost = cost
         trainer.service_provided_id = service_provided_id
 
-            # Handle image upload
+        # Handle image upload
         if 'image' in request.files:
             image = request.files['image']
             if image and image.filename:
@@ -3069,30 +3109,28 @@ def edit_trainer(service_provider_id):
                 extension = image.filename.rsplit('.', 1)[1]
                 filename = f"trainer{service_provider_id}.{extension}"
                 my_file_name = filename.split(".")[0]
-                original_path = os.path.join(app.config['UPLOAD_FOLDER'],"trainers", filename)
-                # image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                original_path = os.path.join(app.config['UPLOAD_FOLDER'], "trainers", filename)
+                
+                # Ensure the trainers directory exists
+                os.makedirs(os.path.dirname(original_path), exist_ok=True)
+
                 image.save(original_path)
                 # if the image is not a jpg, convert it to jpg
                 if extension.lower() != 'jpg':
                     img = Image.open(original_path)
                     img = img.convert('RGB')
-                    # new_file_name = f"service{service_id}.jpg"
-                    # new_path = os.path.join(app.config['UPLOAD_FOLDER'],"services", new_file_name)
-                    # img.save(new_path, 'JPG', quality=85, optimize=True)
-                    # service.image = f'images/{filename}'
                     jpg_filename = my_file_name + ".jpg"
-                    jpg_path = os.path.join(app.config['UPLOAD_FOLDER'],"trainers",jpg_filename)
+                    jpg_path = os.path.join(app.config['UPLOAD_FOLDER'], "trainers", jpg_filename)
                     img.save(jpg_path)
                     os.remove(original_path)
 
         db.session.commit()
     flash('Trainer updated successfully', 'success')
     return redirect(url_for('admin_trainer'))
-
  
 @app.route('/static/images/trainer/<path:filename>')
 def trainer_images(filename):
-    return send_from_directory('static/images/trainer', filename)
+    return send_from_directory('static/images/trainers', filename)
 
 
 # app.config['UPLOAD_FOLDER'] = 'static/certificates'
