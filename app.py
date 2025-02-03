@@ -13,6 +13,7 @@ import random
 import sqlite3
 import os
 import sendgrid
+
 from bcrypt import checkpw
 from flask import Flask, render_template, request, redirect, flash, url_for, session, send_from_directory
 #import sendgrid
@@ -3214,7 +3215,7 @@ def trainer_book():
     
     return render_template('trainer_book.html', service=service, provider=provider)
 
-#
+
 
 def fetch_revenue_data(group_by):
     """Fetch revenue data for all sources (Dog Sales, Competitions, Spa Services) aggregated by the specified period."""

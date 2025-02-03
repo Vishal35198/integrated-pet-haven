@@ -23,10 +23,8 @@
             <a href="{{ url_for('register') }}">Register</a>
         </div>
         <div class="user-profile">
-            <img src="{{ url_for('static', filename='image/user_icon.png') }}" alt="User">
             <span>Welcome, {{ user_name }}</span> <!-- Display the logged-in user's name -->
             <div class="dropdown">
-                <a href="#">Profile</a>
                 <a href="{{ url_for('logout') }}">Logout</a> <!-- Ensure logout functionality exists -->
             </div>
         </div>

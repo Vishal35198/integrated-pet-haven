@@ -116,3 +116,23 @@ th {
     margin-right: 10px;
     vertical-align: middle;
 }
+ .btn{
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+ }
+
+ .message{
+    padding: 20px;
+    background-color: #f3f8d7;
+    border-radius: 8px;
+    color: black;
+    font-weight: bold;
+    text-align: center;
+ }

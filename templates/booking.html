@@ -180,24 +180,16 @@
                 <h1><strong>Trainer Name:</strong> {{ provider.name }}</h1>
                 <p><strong>Experience:</strong> {{ provider.experience }} years</p>
                 <p><strong>Specialized in:</strong> {{ service.title }}</p>
-                <p><strong>Price</strong> $50/hour</p>
+                <p><strong>Price</strong> ₹{{ provider.cost }}/hour</p>
                 <!--<p>Rating: ⭐⭐⭐⭐☆ (4.5/5)</p>-->
                 <p><strong>Description:</strong> {{ provider.description }}</p>
-                <p><strong>Availability:</strong> {{ "Available" if provider.availability else "Not Available" }}</p>
             </div>
             {% endif %}
             {% endif %}
         </div>
 
         
-        <div class="location section">
-            <h2>Shop Location</h2>
-            <p>{{ provider.location }}</p>
-            <iframe
-        src="https://www.google.com/maps/embed/v1/place?key=YOUR_GOOGLE_MAPS_API_KEY&q={{ provider.location | urlencode }}"
-        allowfullscreen="" loading="lazy">
-    </iframe>
-        </div>
+       
 
         <!-- Photo Gallery Section -->
         <div class="photo-gallery section">
@@ -229,7 +221,6 @@
             <div id="booking-summary" class="booking-summary">
                 <p style="text-align: center;"><strong>Selected Date:</strong> <span id="summary-date"></span></p>
                 <p style="text-align: center;"><strong>Selected Time:</strong> <span id="summary-time"></span></p>
-                <button class="button-primary" style="background-color: black; display: block; margin: 0 auto;" onclick="confirmBooking()">Confirm Booking</button>
             </div>
             <!-- {%if provider.service_provider_id in cart_items_ids%} -->
     <!-- <a href="/add_to_cart/{{provider.service_provider_id}}">
@@ -250,9 +241,13 @@
             const loading = document.getElementById('loading');
             const provider_id = "{{ provider.service_provider_id }}";
 
-            const today = new Date().toISOString().split('T')[0];
-            dateInput.min = today;
-            dateInput.value = today;
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const formattedTomorrow = tomorrow.toISOString().split('T')[0];
+
+            dateInput.min =formattedTomorrow;
+            dateInput.value = formattedTomorrow;
 
             dateInput.addEventListener('change', fetchSlots);
 
