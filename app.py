@@ -3165,12 +3165,12 @@ def edit_request():
                     return redirect(url_for('edit_request'))
 
             # Get form data
-            hashed_password = generate_password_hash(request.form['password']) if request.form['password'] else None
+            #hashed_password = generate_password_hash(request.form['password']) if request.form['password'] else None
             
             edit_request = EditRequest(
                 full_name=request.form['full_name'],
                 email=request.form['email'],
-                password=hashed_password,
+                password="Temperary password",
                 service_type=request.form['service_type'],
                 location=request.form['location'],
                 hourly_rate=float(request.form['hourly_rate']),
