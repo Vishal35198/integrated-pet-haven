@@ -71,7 +71,6 @@
                 <a href="{{ url_for('admin_ana') }}?timeframe_chart3=yearly" class="btn btn-{{ 'primary' if timeframe_chart3 == 'yearly' else 'secondary' }}">Yearly</a>
             </div>
             <div id="growth-rate-chart" class="card shadow-sm p-3">
-                <h5>Revenue Growth Rate Over Time</h5>
                 {{ growth_rate_graph_html | safe }}
             </div>
         </div>

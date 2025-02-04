@@ -3384,7 +3384,7 @@ def admin_ana():
         merged_df_chart1,
         x='period',
         y=['total_sales_revenue', 'total_competition_revenue', 'total_spa_revenue'],
-        title=f'Total Revenue by Source ({timeframe_chart1.capitalize()})',
+        title=f'Revenue Trends by Source over Time ({timeframe_chart1.capitalize()})',
         labels={'period': 'Time Period', 'value': 'Revenue', 'variable': 'Revenue Source'},
         barmode='group'
     )
@@ -3412,7 +3412,7 @@ def admin_ana():
         growth_df_chart3,
         x='period',
         y='growth_rate',
-        title=f'Revenue Growth Rate Over Time ({timeframe_chart3.capitalize()})',
+        title=f'Overall Revenue Growth Rate ({timeframe_chart3.capitalize()})',
         labels={'period': 'Time Period', 'growth_rate': 'Growth Rate (%)'},
         markers=True
     )
@@ -3424,7 +3424,7 @@ def admin_ana():
         x='period',
         y='total_revenue',
         color='breed',
-        title=f'Sales Over Time ({timeframe_chart4.capitalize()})',
+        title=f'Dog Sales Trend Analysis ({timeframe_chart4.capitalize()})',
         labels={'period': 'Time Period', 'total_revenue': 'Total Revenue', 'breed': 'Breed'},
          barmode='group'
       
@@ -3436,7 +3436,7 @@ def admin_ana():
         x='period',
         y='total_revenue',
         color='trainer_name',
-        title=f'Trainer Revenue Over Time ({timeframe_chart5.capitalize()})',
+        title=f'Trainer Performance Trends ({timeframe_chart5.capitalize()})',
         labels={'period': 'Time Period', 'total_revenue': 'Total Revenue', 'trainer_name': 'Trainer'},
         barmode='group'
     )
