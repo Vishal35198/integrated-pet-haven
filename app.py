@@ -655,7 +655,11 @@ def service_provider():
         user_name = session['fullname']
         print(user_name)
         current_service_provider = Service_Provider.query.filter_by(name = user_name).first().service_provider_id
-        bookings = Booking.query.filter_by(provider_id = current_service_provider)
+        print("the service provider details are ",current_service_provider)
+        bookings = Booking.query.filter(
+            Booking.provider_id == current_service_provider,
+            Booking.booking_date >= date.today()
+            ).all()
 
         return render_template('service_provider.html',bookings = bookings,user_name = user_name)
     

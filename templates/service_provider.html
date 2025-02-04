@@ -68,7 +68,7 @@
     <main>
         <section>
             <h1>Showing Bookings for you {{user_name}}... 🕰️</h1>
-            <h2>You have total of {{bookings.count()}} 😄 bookings ... </h2>
+            <!-- <h2>You have total of  😄 bookings ... </h2> -->
                 <!-- Main Content -->
     <div class="container mt-5">
         <h2 class="mb-4">Bookings</h2>
@@ -80,7 +80,7 @@
                         Booking #{{ booking.id }}
                     </div>
                     <div class="card-body">
-                        <p><strong>Name:</strong> {{ booking.name }}</p>
+                        <p><strong>Customer Name:</strong> {{ booking.name }}</p>
                         <p><strong>Email:</strong> {{ booking.email }}</p>
                         <p><strong>Phone:</strong> {{ booking.phone }}</p>
                         <p><strong>Service ID:</strong> {{ booking.service_id }}</p>
