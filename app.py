@@ -2930,8 +2930,7 @@ def add_service():
         
         # Create a new service without the image path first to get the service_id
         new_service = Service(
-            image='',  # Temporary placeholder
-            age='',  # Temporary placeholder
+            image='',  # Temporary placeholder# Temporary placeholder
             alt=alt,
             title=title,
             description=description,
@@ -3460,6 +3459,32 @@ def admin_ana():
         timeframe_chart4=timeframe_chart4,
         timeframe_chart5=timeframe_chart5
     )
+
+# @app.route("/contact_us",methods = ['POST'])
+# def contact_us():
+    
+#     full_name = request.form['name']
+#     email = request.form['email']
+#     message = request.form['message']
+#     print(full_name,email,message)
+#     # try sendinf the mail 
+#     try:
+#         msg = Message(
+#             "Contact us Mails",
+#             sender=app.config['MAIL_USERNAME'],
+#             recipients= email,
+#         )
+#         email_body = message
+#         msg.body = email_body
+#         notif_mail.send(msg)
+    
+#     except Exception as e:
+#         print(f"Error sending mail",str(e))
+        
+#     return jsonify({'sucess': True}),200
+    
+#     # send the required mail . 
+    
 
 
 if __name__ == '__main__':
