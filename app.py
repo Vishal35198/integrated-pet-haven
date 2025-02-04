@@ -57,12 +57,121 @@ migrate = Migrate(app, db)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'jasnavig9@gmail.com'
-app.config['MAIL_PASSWORD'] = 'guze fwag qsff hppm'
-app.config['MAIL_DEFAULT_SENDER'] = 'noreply@gmail.com'
+app.config['MAIL_USERNAME'] = 'janardhandora330@gmail.com'
+app.config['MAIL_PASSWORD'] = 'tpch rgsi rspe npid'
+app.config['MAIL_DEFAULT_SENDER'] = 'janardhandora330@gmail.com'
 notif_mail = Mail(app)
 mail=Mail(app)
 
+def create_admin_table():
+    try:
+        # Connect to SQLite database
+        connection = sqlite3.connect('Petheaven.db')  # Replace with your actual DB file name
+        cursor = connection.cursor()
+
+        # Create the admin_credentials table if it doesn't exist
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admin_credentials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email VARCHAR(255) NOT NULL,
+            password VARCHAR(255) NOT NULL
+        );
+        ''')
+
+        # Insert admin credentials, even if the table already has data
+        cursor.executemany('''
+        INSERT INTO admin_credentials (email, password)
+        VALUES (?, ?)
+        ''', [
+            ('jasnavigandham@gmail.com', 'jasnavi123'),
+            ('bhanvi.nayer@gmail.com', 'bhanvi123'),
+            ('janardhandora330@gmail.com', 'janardan123'),
+            ('jeevikapass@gmail.com', 'jeevika123')
+        ])
+        print("Credentials added successfully.")
+
+        # Commit the changes and close the connection
+        connection.commit()
+        connection.close()
+
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+
+# Call the function to create the table and insert data
+create_admin_table()
+
+
+
+# Connect to the SQLite database
+connection = sqlite3.connect('Petheaven.db')  # Replace with your actual DB file name
+cursor = connection.cursor()
+
+# Create the admin_credentials table if it doesn't exist
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS admin_credentials (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email VARCHAR(255) NOT NULL,
+    password VARCHAR(255) NOT NULL
+);
+''')
+
+# Insert test admin credentials only if they don't already exist
+cursor.execute('SELECT COUNT(*) FROM admin_credentials WHERE email = ?', ('jasnavigandham@gmail.com',))
+count = cursor.fetchone()[0]
+
+if count == 0:
+    cursor.executemany('''
+    INSERT INTO admin_credentials (email, password)
+    VALUES (?, ?)
+    ''', [
+        ('jasnavigandham@gmail.com', 'admin123'),
+        ('bhanvi.nayer@gmail.com', 'bhanvi123'),
+        ('janardhandora330@gmail.com', 'janardan123'),
+        ('jeevikapass@gmail.com', 'jeevika123')
+    ])
+    print("Test admin credentials inserted.")
+
+# Commit the changes and close the connection
+connection.commit()
+connection.close()
+
+
+def authenticate_admin(email, password):
+    try:
+        # Connect to SQLite database
+        connection = sqlite3.connect('Petheaven.db')  # Replace 'your_database.db' with your actual DB file
+        cursor = connection.cursor()
+
+        # Check if the email and password match any admin record
+        query = "SELECT * FROM admin_credentials WHERE email = ? AND password = ?"
+        cursor.execute(query, (email, password))
+        admin = cursor.fetchone()
+
+        # If an admin is found, return True, otherwise False
+        if admin:
+            return True
+        return False
+
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+        return False
+    finally:
+        connection.close()
+
+
+
+
+@app.route('/admin_signin', methods=['POST'])
+def admin_signin():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    # Check if the provided credentials match the ones stored in the SQLite database
+    if authenticate_admin(email, password):
+        return jsonify({'status': 'success', 'redirect_url': '/admin_landing'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Invalid admin credentials'})
 
 # Database Model
 class User(db.Model):
@@ -352,7 +461,7 @@ class Final_Cart(db.Model):
         self.booking_date = booking_date
         self.booking_time = booking_time
 
-    
+  
 @app.route('/get-service-providers', methods=['GET'])
 def get_service_providers():
     try:
@@ -1032,6 +1141,19 @@ Thank you!
 
     
     
+# Query all users from the database
+def show_users():
+    with db.app.app_context():  # Create an application context
+        users = User.query.all()
+        if users:
+            print("User Data in the Database:")
+            for user in users:
+                print(f"ID: {user.id}, Fullname: {user.fullname}, Email: {user.email}, Role: {user.role}")
+                if user.role == 'service-provider':
+                    print(f"Service Type: {user.service_type}, Location: {user.location}, Hourly Rate: {user.hourly_rate}, Certifications: {user.certifications}, Experience: {user.experience}, IdProof: {user.id_proof_path}, Qualifiaction: {user.qualification_path}, CertificationPath: {user.certification_path}")
+        else:
+            print("No user data found in the database.")
+
 # Query all users from the database
 def show_users():
     with db.app.app_context():  # Create an application context
@@ -3484,9 +3606,33 @@ def admin_ana():
 #     return jsonify({'sucess': True}),200
     
 #     # send the required mail . 
-    
+@app.route('/send_contact_message', methods=['POST'])
+def send_contact_message():
+    try:
+        name = request.form.get('name')
+        sender_email = request.form.get('email')
+        message_text = request.form.get('message')
 
-
+        msg = Message(
+            subject=f'New Contact Form Message from {name}',
+            sender=sender_email,
+            recipients=['bahugunastuti@gmail.com'],
+            body=f"""
+            Name: {name}
+            Email: {sender_email}
+            Message:
+            {message_text}
+            """
+        )
+        
+        mail.send(msg)
+        flash('Your message has been sent successfully!', 'success')
+        return redirect(url_for('home'))
+        
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        flash('There was an error sending your message. Please try again.', 'error')
+        return redirect(url_for('home'))
 if __name__ == '__main__':
     # with app.app_context():
     #     db.create_all()
