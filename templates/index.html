@@ -42,9 +42,8 @@
     </div>
     <a href="#" style="text-decoration: none; color: #007bff;" onclick="toggleForm('forgot-password')">Forgot password?</a>
   </div>
-  <button type="submit" class="submit-btn" onclick="login()">Login</button>
+  <button type="submit" class="submit-btn" onclick="login(event)">Login</button>
 </form>
-
 <!-- Register Form -->
 <form id="register-form" action="/register" method="POST" enctype="multipart/form-data">
   <div class="form-group">
@@ -410,37 +409,58 @@ function sendRegistrationEmail(fullname, email) {
 
 
 function login() {
-    const email = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value.trim();
-    const role = document.getElementById('role').value;
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  const role = document.getElementById('role').value;
 
-    if (!email || !password || !role) {
-        alert('Please fill in all fields.');
-        return;
-    }
+  if (!email || !password || !role) {
+      alert('Please fill in all fields.');
+      return;
+  }
 
-    // Handle login for service providers and customers
-    fetch('/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, password: password, role: role })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            if (data.redirect_url) {
-                window.location.replace(data.redirect_url); // Redirect based on role (either service provider or customer)
-            }
-        } else {
-            alert(data.message || 'Login failed');
-        }
-    })
-    .catch(error => {
-        console.error('Login error:', error);
-        alert('An error occurred during login.');
-    });
+  // Handle login for Admin separately
+  if (role === 'admin') {
+    fetch('/admin_signin', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              window.location.replace(data.redirect_url); // Redirect to admin landing page
+          } else {
+              alert(data.message || 'Login failed');
+          }
+      })
+      .catch(error => {
+          console.error('Login error:', error);
+          alert('An error occurred during login.');
+      });
+
+  } else {
+      // Handle login for service providers and customers
+      fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password, role: role })
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.status === 'success') {
+              if (data.redirect_url) {
+                  window.location.replace(data.redirect_url); // Redirect based on role
+              }
+          } else {
+              alert(data.message || 'Login failed');
+          }
+      })
+      .catch(error => {
+          console.error('Login error:', error);
+          alert('An error occurred during login.');
+      });
+  }
 }
-
 
   function sendForgotPasswordOtp() {
     const email = document.getElementById('forgot-email').value;

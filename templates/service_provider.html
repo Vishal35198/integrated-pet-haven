@@ -9,19 +9,11 @@
 <body>
     <header>
         <h1>Pet Haven - Service Provider Dashboard</h1>
-        <div class="switch-button">
-            <button  onclick="window.location.href='{{ url_for('edit_request') }}'";>Edit Details</button>
-        </div>
     </header>
     <nav>
         <a href="{{url_for('service_provider_landing')}}">Home</a>
         <a href="{{url_for('trainer_services')}}">Dog Spa and Management</a>
-        <div class="user-profile">
-            <span>Welcome,{{ user_name }}</span>
-            <div class="dropdown">
-                <a href="#">Logout</a>
-            </div>
-        </div>
+        
     </nav>
     <main>
         <section>

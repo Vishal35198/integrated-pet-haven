@@ -41,7 +41,7 @@
             <img src="../static/image/dog_spa.jpg" alt="Dog Spa">
             <h3>Dog Spa Services</h3>
             <p>Edit spa Services</p>
-            <a href="{{ url_for('trainer_services') }}">Edit Now</a>
+            <a onclick="window.location.href='{{ url_for('edit_request') }}'";>Edit Request</a>
         </div>
 
         <div class="card">
@@ -53,7 +53,8 @@
         
     </div>
     <!-- Footer -->
-    <footer>
+        </div>
+        <footer>
         <p>Pet Haven</p>
     </footer>
 </body>

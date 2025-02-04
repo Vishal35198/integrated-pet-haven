@@ -14,12 +14,14 @@
     </header>
 
     <!-- Navigation Bar -->
+    <!-- Navigation Bar -->
     <nav>
         <a href="{{url_for('admin')}}">Canine Commerce</a>
         <a href="{{ url_for('admin_services') }}">Dog Spa and Management</a>
         <a href="{{ url_for('admin_events') }}">Dog Competitions</a>
         <a href="/admin_dashboard">Customer Requests</a>
         <a href="/admin_dashboard">Service Provider Approvals</a>
+        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
     </nav>
 
     <div class="hero">
