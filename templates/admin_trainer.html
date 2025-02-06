@@ -13,7 +13,7 @@
   <style>
     /* Navbar background color */
     .navbar {
-      background-color: #ffec9f;
+      background-color: #1e90ff;
     }
 
     /* Brand name styling */
@@ -54,7 +54,7 @@
       font-family: 'Arial', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #faf0c4;
+      background-color: white;
     }
 
     /* Hover effect for the Home button */
@@ -163,7 +163,7 @@
       top: 100px;
       /* Adjust based on navbar height */
       width: 25%;
-      background-color: #faf0c4;
+      background-color: white;
       padding: 30px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       height: fit-content;
@@ -181,9 +181,9 @@
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
-      background-color: #f8d754;
-      color: white;
-      border: 2px solid #ffec9f;
+      background-color: white;
+      color: black;
+      border: 2px solid white;
       border-radius: 20px;
       font-size: 1rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -200,7 +200,7 @@
     .right-section {
       width: 75%;
       padding: 30px;
-      background-color: #faf0c4;
+      background-color: white;
     }
 
     /* Carousel Styles */
@@ -315,7 +315,7 @@
 
     .faq .accordion-button {
       font-size: 1.1rem;
-      background-color: #faf0c4;
+      background-color: white;
     }
 
     .contact-us form input,
@@ -571,7 +571,7 @@
       </div>
     </div>
   </nav>
-  <section class="main-container  container-fluid p-5 " style="background-color: #faf0c4;">
+  <section class="main-container  container-fluid p-5 " >
     <div class="container">
       <div class="parallax">
         <h1 class="display-4 pt-8" style="color: #181938;"><b>Welcome to Pet Haven</b></h1>
@@ -588,7 +588,7 @@
   <div class="row">
       <div class="col-md-12">
           <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center" style="background-color: #ffec9f;">
+              <div class="card-header d-flex justify-content-between align-items-center" >
                   <h3 class="mb-0">Edit Requests</h3>
                   {% if pending_count > 0 %}
                   <span class="badge bg-warning">{{ pending_count }} Pending</span>
@@ -689,8 +689,8 @@
       </div>
   </div>
 </div>
-      <div class="main-content-section container-fluid p-10" style="background-color: #faf0c4;">
-        <div class="row" style="background-color: #faf0c4;">
+      <div class="main-content-section container-fluid p-10" >
+        <div class="row" >
           <div class="col-md-4 left-sidebar">
             <h4 class="text-center" style="color: #181938;">Quick Links</h4>
             <button onclick="window.location.href='#'">Home</button>
@@ -701,8 +701,8 @@
             <button onclick="window.location.href='#contact-us'">Contact Us</button>
 
           </div>
-          <div class="col-md-8 right-section container-fluid" style="background-color: #faf0c4;">
-            <section id="services-provided" class="container-fluid" style="background-color: #faf0c4;">
+          <div class="col-md-8 right-section container-fluid" >
+            <section id="services-provided" class="container-fluid" >
               <h2 class="section-title">Service Provider</h2>
               <div class="row rightsec">
                 {% for trainer in trainers %}
@@ -742,7 +742,7 @@
                 {% endfor %}
               </div>
             </section>
-            <section class="carousel container p-5" style="background-color: #faf0c4;">
+            <section class="carousel container p-5" >
               <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                   <div class="carousel-item active">
@@ -772,7 +772,7 @@
               </div>
             </section>
             <!-- FAQ Section -->
-            <section id="faq" class="faq p-5" style="background-color: #faf0c4;">
+            <section id="faq" class="faq p-5" >
               <h2 class="section-title">Frequently Asked Questions</h2>
               <div class="accordion" id="faqAccordion">
                 <!-- Question 1 -->
@@ -910,7 +910,7 @@
                 </div>
               </div>
             </section>
-            <section class="carousel container" style="background-color: #faf0c4;">
+            <section class="carousel container" >
               <div id="carouselExampleAutoplaying" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                   <div class="carousel-item active">
@@ -939,7 +939,7 @@
                 <span class="visually-hidden">Next</span>
               </button>
             </section>
-            <section id="reviews" class="container my-5 " style="background-color: #faf0c4;">
+            <section id="reviews" class="container my-5 " >
               <h2 class="text-center mb-4">What Our Happy Pet Parents Say</h2>
               <div class="row">
                 <!-- Review 1 -->
@@ -1011,7 +1011,7 @@
             </section>
 
             <!-- Contact Us Section -->
-            <section id="contact-us" class="container my-5 p-5" style="background-color: #faf0c4;">
+            <section id="contact-us" class="container my-5 p-5" >
               <div class="row align-items-center">
         
 
