@@ -138,25 +138,20 @@ connection.close()
 
 def authenticate_admin(email, password):
     try:
-        # Connect to SQLite database
-        connection = sqlite3.connect('Petheaven.db')  # Replace 'your_database.db' with your actual DB file
-        cursor = connection.cursor()
-
-        # Check if the email and password match any admin record
-        query = "SELECT * FROM admin_credentials WHERE email = ? AND password = ?"
-        cursor.execute(query, (email, password))
-        admin = cursor.fetchone()
-
-        # If an admin is found, return True, otherwise False
+        
+        admin = User.query.filter(
+            User.email == email,
+            User.password == password,
+        ).first()
+        
         if admin:
             return True
-        return False
+        else:
+            return False
 
     except sqlite3.Error as e:
         print(f"SQLite error: {e}")
         return False
-    finally:
-        connection.close()
 
 
 
@@ -166,6 +161,7 @@ def admin_signin():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
+    print(email,password)
 
     # Check if the provided credentials match the ones stored in the SQLite database
     if authenticate_admin(email, password):
@@ -615,7 +611,7 @@ def ensure_fresh_session():
 def home():
     # If no active session, render the customer landing page by default
     if not session.get('role'):
-        return render_template('landing_page.html', user_name=None)
+        return render_template('landing_page.html', user_name="User")
 
     # Check if the user is logged in as a service provider
     if session.get('role') == 'service-provider':
@@ -632,7 +628,7 @@ def home():
 
     # Fallback for unexpected roles
     session.clear()
-    return render_template('landing_page.html', user_name=None)
+    return render_template('landing_page.html', user_name= "User")
    
 
 
@@ -1293,67 +1289,72 @@ def get_cart_data():
 # Customer Cart Routes
 @app.route('/cart', methods=['GET'])
 def view_cart():
-    # ! This is Team 2 Cart Data 
-    cart_data_2 = get_cart_data()
-    # cart_items = Cart.query.all()
-    # cart_items = Final_Cart.query.all()
-    # trainers = []
+    
+    if session.get("role") == "customer":
+        
+        # ! This is Team 2 Cart Data 
+        cart_data_2 = get_cart_data()
+        # cart_items = Cart.query.all()
+        # cart_items = Final_Cart.query.all()
+        # trainers = []
 
-    # for item in cart_items:
-    #     trainer = Service_Provider.query.get(item.service_provider_id)
-    #     if trainer:
-    #         trainers.append(trainer)
-    #! This is Team 3 Cart Data
-    cart_items = Final_Cart.query.all()
-    cart_data_3 = []
-    for item in cart_items:
-        trainer = Service_Provider.query.get(item.service_provider_id)
-        if trainer:
-            d = {
-                'id': item.id,
-                'name': trainer.name,
-                'service_provider_id': item.service_provider_id,
-                'booking_time': item.booking_time,
-                "booking_date": item.booking_date,
-                'cost': trainer.cost
-            }
-            cart_data_3.append(d)
-    print(cart_data_3)
-    #! This is Team 4 Cart Data 
-    # cart_data_4 = Registration.query.all()
-    # cart_data_4_Total = sum(item.event.price if item.event else 0 for item in cart_data_4)
-    cart_data_4 = CartEvent.query.all() 
-    cart_data_4_info = []
-    for item in cart_data_4:
-        event = Registration.query.get(item.registration_id)
-        if event:
-            d = {
-                'id': item.id,
-                'name': event.competition_name,
-                'registration_id': item.registration_id,
-                'cost': item.price
-            }
-            cart_data_4_info.append(d)
-    cost = cart_data_2['subtotal']
-    cost+= sum(item['cost'] for item in cart_data_4_info)
-    for i in range(len(cart_data_3)):
-        cost += cart_data_3[i]['cost']
+        # for item in cart_items:
+        #     trainer = Service_Provider.query.get(item.service_provider_id)
+        #     if trainer:
+        #         trainers.append(trainer)
+        #! This is Team 3 Cart Data
+        cart_items = Final_Cart.query.all()
+        cart_data_3 = []
+        for item in cart_items:
+            trainer = Service_Provider.query.get(item.service_provider_id)
+            if trainer:
+                d = {
+                    'id': item.id,
+                    'name': trainer.name,
+                    'service_provider_id': item.service_provider_id,
+                    'booking_time': item.booking_time,
+                    "booking_date": item.booking_date,
+                    'cost': trainer.cost
+                }
+                cart_data_3.append(d)
+        print(cart_data_3)
+        #! This is Team 4 Cart Data 
+        # cart_data_4 = Registration.query.all()
+        # cart_data_4_Total = sum(item.event.price if item.event else 0 for item in cart_data_4)
+        cart_data_4 = CartEvent.query.all() 
+        cart_data_4_info = []
+        for item in cart_data_4:
+            event = Registration.query.get(item.registration_id)
+            if event:
+                d = {
+                    'id': item.id,
+                    'name': event.competition_name,
+                    'registration_id': item.registration_id,
+                    'cost': item.price
+                }
+                cart_data_4_info.append(d)
+        cost = cart_data_2['subtotal']
+        cost+= sum(item['cost'] for item in cart_data_4_info)
+        for i in range(len(cart_data_3)):
+            cost += cart_data_3[i]['cost']
 
-    gst = int(cost * 0.05)
-    sgst = gst // 2
+        gst = int(cost * 0.05)
+        sgst = gst // 2
 
-    total = cost + gst + sgst
-    return render_template(
-        'cart.html',
-        cart_data_2=cart_data_2['cart_details'],
-        subtotal=cost,
-        shipping=500,
-        gst=gst,
-        sgst=sgst,
-        cart_data_3 = cart_data_3,
-        cart_data_4 = cart_data_4_info,
-        total = total
-    )
+        total = cost + gst + sgst
+        return render_template(
+            'cart.html',
+            cart_data_2=cart_data_2['cart_details'],
+            subtotal=cost,
+            shipping=500,
+            gst=gst,
+            sgst=sgst,
+            cart_data_3 = cart_data_3,
+            cart_data_4 = cart_data_4_info,
+            total = total
+        )
+    else:
+        return render_template("index.html")
 
 
 @app.route('/add_to_cart/<int:pet_id>', methods=['POST'])
@@ -2309,22 +2310,25 @@ def order_summary():
 
 @app.route('/services')
 def services():
-    services = Service.query.all()
-    return render_template('services.html', services=services)
+    if session.get("role") == "customer":
+        services = Service.query.all()
+        return render_template('services.html', services=services)
+    else:
+        return render_template("index.html")
 
 
 @app.route('/trainer')
 def trainer():
-    # if 'user' not in session:
-    #     flash('Please login first!', 'danger')
-    #     return redirect(url_for('login'))
-    services = Service.query.all()
-    trainers = Service_Provider.query.all()
-    # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
-    print(trainers)
-    print(services)
-    return render_template('trainer.html', services=services,trainers = trainers)
 
+    if session.get("role") == "customer":
+        services = Service.query.all()
+        trainers = Service_Provider.query.all()
+        # trainer_img_url = f'static/trainer{{trainers.service_provider_id}}.jpg'
+        print(trainers)
+        print(services)
+        return render_template('trainer.html', services=services,trainers = trainers)
+    else:
+        return redirect(url_for("login"))
 @app.route("/add_to_cart_trainers", methods=['POST'])
 def add_cart():
     try:
