@@ -46,10 +46,10 @@ nav a:hover {
 .user-profile {
     position: relative;
     display: inline-block;
+    cursor: pointer;
 }
 
 .user-profile span {
-    cursor: pointer;
     font-weight: bold;
     color: #333;
 }
@@ -66,12 +66,14 @@ nav a:hover {
     display: none;
     position: absolute;
     top: 35px;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
     background-color: #ffffff;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
     z-index: 1000;
     width: 150px;
+    text-align: center;
 }
 
 .dropdown a {
@@ -86,9 +88,6 @@ nav a:hover {
     background-color: #f0f8ff;
 }
 
-.user-profile:hover .dropdown {
-    display: block;
-}
 
 .switch-button {
     position: absolute;
