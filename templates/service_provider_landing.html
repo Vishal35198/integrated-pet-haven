@@ -19,14 +19,14 @@
     <nav>
         <a href="{{ url_for('edit_request') }}">Edit Services Request</a>
         <a href="{{ url_for('service_provider') }}">Service Requests</a>
-
         <div class="user-profile">
             <img src="{{ url_for('static', filename='image/user_icon.png') }}" alt="User">
-            <span>Welcome, {{ user_name }}</span> <!-- Display the service provider's name -->
+            <span id="welcome-text">Welcome, {{ user_name }}</span> <!-- Display the service provider's name -->
             <div class="dropdown">
                 <a href="{{ url_for('logout') }}">Logout</a> <!-- Ensure logout works -->
             </div>
         </div>
+    </nav>
         
         </div>
     </nav>
@@ -58,6 +58,7 @@
         <p>Pet Haven</p>
     </footer>
     
+  
     <!-- JavaScript for Dropdown -->
     <script>
         document.addEventListener("DOMContentLoaded", function () {
