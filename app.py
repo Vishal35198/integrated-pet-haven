@@ -189,6 +189,22 @@ class User(db.Model):
     id_proof_path = db.Column(db.String(255), nullable=True)
     qualification_path = db.Column(db.String(255), nullable=True)
     certification_path = db.Column(db.String(255), nullable=True)
+    
+    def __init__(self, fullname, email, password, role, service_type=None, location=None, 
+                hourly_rate=None, certifications=None, experience=None, 
+                id_proof_path=None, qualification_path=None, certification_path=None):
+        self.fullname = fullname
+        self.email = email
+        self.password = password
+        self.role = role
+        self.service_type = service_type
+        self.location = location
+        self.hourly_rate = hourly_rate
+        self.certifications = certifications
+        self.experience = experience
+        self.id_proof_path = id_proof_path
+        self.qualification_path = qualification_path
+        self.certification_path = certification_path    
 
 class Pet(db.Model):
     __tablename__ = 'pet'
@@ -632,7 +648,22 @@ def service_provider_landing():
 
 @app.route('/service_provider')
 def service_provider():
-    return render_template('service_provider.html')
+    print(session)
+    
+    if 'fullname' in session and session['role'] == 'service-provider':
+        print("logged in as service provider")
+        user_name = session['fullname']
+        print(user_name)
+        current_service_provider = Service_Provider.query.filter_by(name = user_name).first().service_provider_id
+        print("the service provider details are ",current_service_provider)
+        bookings = Booking.query.filter(
+            Booking.provider_id == current_service_provider,
+            Booking.booking_date >= date.today()
+            ).all()
+
+        return render_template('service_provider.html',bookings = bookings,user_name = user_name)
+    
+    return redirect(url_for('login'))
 
     
 @app.route('/logout')
@@ -1048,7 +1079,7 @@ def login():
     if not data.get('email') or not data.get('password'):
         return jsonify({'status': 'error', 'message': 'Email and password are required!'}), 400
 
-    email = data['email'].strip().lower()
+    email = data['email'].strip()
     password = data['password']
     role = data.get('role')
 
@@ -3616,7 +3647,7 @@ def send_contact_message():
         msg = Message(
             subject=f'New Contact Form Message from {name}',
             sender=sender_email,
-            recipients=['bahugunastuti@gmail.com'],
+            recipients=['vishal351980@gmail.com'],
             body=f"""
             Name: {name}
             Email: {sender_email}
