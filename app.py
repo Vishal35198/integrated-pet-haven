@@ -527,19 +527,9 @@ def shutdown_session(exception=None):
         db.session.remove()
     except OperationalError:
         pass
-@app.route('/uploads/<path:filename>')  # Use <path:filename> to allow spaces
+@app.route('/uploads/<filename>')
 def uploaded_file(filename):
-    try:
-        safe_path = safe_join(app.config['UPLOAD_FOLDER'], filename)
-
-        # Check if the file exists
-        if not os.path.exists(safe_path):
-            return "File Not Found", 404
-
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    except Exception as e:
-        print(f"Error: {e}")
-        return abort(500)
+    return send_from_directory('uploads', filename)
 
 @app.route('/show-users')
 def display_users():
@@ -2808,7 +2798,6 @@ PetCare Team"""
         print(f"Error in success page: {str(e)}")
         return redirect(url_for('index'))
 
-in line 2802 change this def success_page ... as below code 
 
 
 @app.route('/success_page')
