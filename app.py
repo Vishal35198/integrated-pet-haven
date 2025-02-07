@@ -2808,6 +2808,8 @@ PetCare Team"""
         print(f"Error in success page: {str(e)}")
         return redirect(url_for('index'))
 
+in line 2802 change this def success_page ... as below code 
+
 
 @app.route('/success_page')
 def success_page():
@@ -2825,7 +2827,7 @@ def success_page():
 
     db.session.add(sale)
     db.session.commit()
-
+    
     for cart_detail in get_cart_data()['cart_details']:
         sale_detail = Sale_detail(
             sale_id = sale.sale_id,
@@ -2865,6 +2867,7 @@ def success_page():
         )
         db.session.add(booking)
         db.session.commit()
+    
     # item , price , quantity total
     summary = []
     for cart_detail in get_cart_data()['cart_details']:
@@ -2906,6 +2909,8 @@ def success_page():
     db.session.query(Cart).delete()
     db.session.query(CartEvent).delete()
     db.session.commit()
+    db.session.query(Registration).delete()  # Deletes all rows in the Registration table
+    db.session.commit()
 
     return render_template(
         'success.html', 
@@ -2923,7 +2928,6 @@ def success_page():
         sgst=sgst,
         total=total
     )
-
 
 def setup_image_handling(app):
     # Configure image upload settings
