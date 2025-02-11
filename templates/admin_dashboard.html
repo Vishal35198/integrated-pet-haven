@@ -189,12 +189,12 @@
                             <td>${provider.experience || 'N/A'} years</td>
                             <td>
                                 ${provider.id_proof_path 
-                                    ? `<a href="/uploads/${provider.id_proof_path}" target="_blank">View Document</a>` 
+                                    ? `<a href="/static/images/${provider.id_proof_path}" target="_blank">View Document</a>` 
                                     : 'No Document'}
                             </td>
                             <td>
                                 ${provider.qualification_path 
-                                    ? `<a href="/uploads/${provider.qualification_path}" target="_blank">View Document</a>` 
+                                    ? `<a href="/static/images/${provider.qualification_path}" target="_blank">View Document</a>` 
                                     : 'No Document'}
                             </td>
                             <td>

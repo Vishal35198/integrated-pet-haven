@@ -13,6 +13,8 @@ import random
 import sqlite3
 import os
 import sendgrid
+import smtplib
+from email.mime.text import MIMEText
 
 from bcrypt import checkpw
 from flask import Flask, render_template, request, redirect, flash, url_for, session, send_from_directory
@@ -527,9 +529,10 @@ def shutdown_session(exception=None):
         db.session.remove()
     except OperationalError:
         pass
-@app.route('/uploads/<filename>')
+@app.route('/images/<filename>')
 def uploaded_file(filename):
-    return send_from_directory('uploads', filename)
+    return send_from_directory('static/images', filename)
+
 
 @app.route('/show-users')
 def display_users():
@@ -1090,7 +1093,11 @@ def login():
 def reset_password():
     data = request.get_json()
     email = data['email']
+    otp = data['otp']
     new_password = data['new_password']
+
+    if email not in otp_store or otp_store[email] != otp:
+        return jsonify({'status': 'error', 'message': 'Invalid OTP!'}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user:
@@ -1099,8 +1106,56 @@ def reset_password():
     user.password = new_password
     db.session.commit()
 
-    del otp_store[email]
+    del otp_store[email]  # Remove OTP after successful password reset
     return jsonify({'status': 'success', 'message': 'Password reset successful!'})
+
+
+def generate_otp():
+    return str(random.randint(100000, 999999))  # Generates a 6-digit OTP
+
+
+@app.route('/forgot-password-otp', methods=['POST'])
+def forgot_password_otp():
+    data = request.get_json()
+    print("Received request:", data)  # Debugging
+
+    email = data.get('email')
+    if not email:
+        return jsonify({'status': 'error', 'message': 'Email is required!'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'status': 'error', 'message': 'User not found!'}), 400
+
+    otp = generate_otp()
+    otp_store[email] = otp
+    send_email(email, f'Your OTP for password reset is: {otp}')
+
+    return jsonify({'status': 'success', 'message': 'OTP sent successfully!'})
+
+
+def send_email(to_email, message):
+    sender_email = "jasnavig9@gmail.com"
+    sender_password = "eavt kbom llzh fali"
+
+    msg = MIMEText(message)
+    msg["Subject"] = "Password Reset OTP"
+    msg["From"] = sender_email
+    msg["To"] = to_email
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, to_email, msg.as_string())
+        server.quit()
+        print(f"Email sent to {to_email}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+
+
+
 
 # New email configuration for accept/reject notifications
 app.config['NOTIF_MAIL_SERVER'] = 'smtp.example.com'  # Replace with your email server

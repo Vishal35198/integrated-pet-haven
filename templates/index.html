@@ -462,51 +462,56 @@ function login() {
   }
 }
 
-  function sendForgotPasswordOtp() {
-    const email = document.getElementById('forgot-email').value;
+function sendForgotPasswordOtp() {
+  console.log("Submit button clicked!");  // Debugging
+  let email = document.getElementById("forgot-email").value;
 
-    fetch('/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('OTP sent to your email.');
-            document.getElementById('reset-password-section').style.display = 'block';
-        } else {
-            alert(data.message);
-        }
-    });
+  fetch("/forgot-password-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email })
+  })
+  .then(response => response.json())
+  .then(data => {
+      console.log("Response received:", data);  // Debugging
+      if (data.status === "success") {
+          alert("OTP sent to your email!");
+          document.getElementById("reset-password-section").style.display = "block";
+      } else {
+          alert("Error: " + data.message);
+      }
+  })
+  .catch(error => console.error("Fetch error:", error));
+}
+
+
+
+function resetPassword() {
+  let email = document.getElementById("forgot-email").value;
+  let otp = document.getElementById("reset-otp").value;
+  let newPassword = document.getElementById("new-password").value;
+  let confirmPassword = document.getElementById("confirm-password-reset").value;
+
+  if (newPassword !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
   }
 
-  function resetPassword() {
-    const email = document.getElementById('forgot-email').value;
-    const otp = document.getElementById('reset-otp').value;
-    const newPassword = document.getElementById('new-password').value;
-    const confirmPassword = document.getElementById('confirm-password-reset').value;
-
-    if (newPassword !== confirmPassword) {
-        alert("Passwords do not match!");
-        return;
-    }
-
-    fetch('/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, otp: otp, new_password: newPassword })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            alert('Password reset successful!');
-            location.reload();
-        } else {
-            alert(data.message);
-        }
-    });
-  }
+  fetch("/reset-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, otp: otp, new_password: newPassword })
+  })
+  .then(response => response.json())
+  .then(data => {
+      alert(data.message);
+      if (data.status === "success") {
+        window.location.href = "/";
+        // Redirect to login page after successful reset
+      }
+  })
+  .catch(error => console.error("Error:", error));
+}
 
   
   function registerUser() {
