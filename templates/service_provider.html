@@ -74,6 +74,7 @@
                 <!-- Main Content -->
     <div class="container mt-5">
         <h2 class="mb-4">Bookings</h2>
+        {%if bookings %}
         <div class="row">
             {% for booking in bookings %}
             <div class="col-md-4 mb-4">
@@ -94,6 +95,12 @@
             </div>
             {% endfor %}
         </div>
+        {%else%}
+        <div  >
+            <h1>No Bookings here for you Today ... 🕰️</h1>
+        </div>
+            
+        {%endif%}
     </div>
         </section>
     </main>

@@ -643,7 +643,9 @@ def service_provider():
         print("logged in as service provider")
         user_name = session['fullname']
         print(user_name)
-        current_service_provider = Service_Provider.query.filter_by(name = user_name).first().service_provider_id
+        current_service_provider = Service_Provider.query.filter_by(name = user_name).first()
+        if current_service_provider :
+            current_service_provider_id = current_service_provider.service_provider_id 
         print("the service provider details are ",current_service_provider)
         bookings = Booking.query.filter(
             Booking.provider_id == current_service_provider,
