@@ -978,8 +978,8 @@ def reset_password():
 app.config['NOTIF_MAIL_SERVER'] = 'smtp.example.com'  # Replace with your email server
 app.config['NOTIF_MAIL_PORT'] = 587
 app.config['NOTIF_MAIL_USE_TLS'] = True
-app.config['NOTIF_MAIL_USERNAME'] = 'jasnavig100@gmail.com'  # Replace with notification email
-app.config['NOTIF_MAIL_PASSWORD'] = 'ectf zfsn anxi nmox'          # Replace with notification email password
+app.config['NOTIF_MAIL_USERNAME'] = ''  # Replace with notification email
+app.config['NOTIF_MAIL_PASSWORD'] = ''          # Replace with notification email password
 
 # Initialize a separate Mail instance
 notif_mail = Mail()
